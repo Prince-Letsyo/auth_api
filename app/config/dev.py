@@ -1,8 +1,11 @@
 from pydantic import BaseModel, HttpUrl
 
+from app.config.base import DatabaseConfigMIXIN
+from app.core.env import env
 
-class DatabaseConfig(BaseModel):
-    url: HttpUrl | str = "sqlite+aiosqlite:///./database.db"
+
+class DatabaseConfig(DatabaseConfigMIXIN):
+    url: HttpUrl | str | None = env.DB_URL
     logging: bool = True
 
 

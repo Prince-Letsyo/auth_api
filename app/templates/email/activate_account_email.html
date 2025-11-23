@@ -1,0 +1,10 @@
+{% extends 'base_email.html' %}
+{% block content %}
+  <h2>Welcome!</h2>
+  <p>Click the button below to activate your account. The link expires in {{ expiry_hours }} hours.</p>
+  <a href="{{ activation_link }}" style="display:inline-block;padding:12px 24px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;">Activate Account</a>
+  <p>
+    If the button doesn't work, copy-paste this URL:<br />
+    <code>{{ activation_link }}</code>
+  </p>
+{% endblock %}

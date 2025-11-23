@@ -1,9 +1,20 @@
+from typing import override
 from pydantic import BaseModel, HttpUrl
 
+from app.config.base import DatabaseConfigMIXIN
 
-class DatabaseConfig(BaseModel):
+
+class DatabaseConfig(DatabaseConfigMIXIN):
     url: HttpUrl | str = "sqlite+aiosqlite:///./test.db"
     logging: bool = False
+
+    @override
+    def session_url(self):
+        return "sqlite+aiosqlite:///./test.db"
+
+    @override
+    def migrate_url(self):
+        return f"sqlite:///./test.db"
 
 
 class FeaturesConfig(BaseModel):
