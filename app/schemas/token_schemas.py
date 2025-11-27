@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlmodel import Column, SQLModel, Field,DateTime
+from sqlmodel import Column, SQLModel, Field,DateTime  # pyright: ignore[reportUnknownVariableType]
 from pydantic import ConfigDict
 
 

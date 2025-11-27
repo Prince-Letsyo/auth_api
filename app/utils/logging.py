@@ -43,7 +43,7 @@ def app_logger():
 
 
 # Regex patterns
-PASSWORD_PATTERN: Pattern[str] = re.compile(r"\b[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\b", re.IGNORECASE)
+PASSWORD_PATTERN: Pattern[str] = re.compile(r"\b([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd][_][Oo][Nn][Ee]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd][_][Tt][Ww][Oo])\b", re.IGNORECASE)
 TOKEN_PATTERN: Pattern[str] = re.compile(r"\b(token|api_key|secret|auth)\b", re.IGNORECASE)
 
 

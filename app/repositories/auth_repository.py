@@ -18,14 +18,12 @@ class AuthRepository(BaseAuthRepository):
     @override
     async def create_user(self, user_create: UserCreate) -> UserModel:
         try:
-            user: UserModel = UserModel.model_validate(
-                obj={
-                    **user_create.model_dump(),
-                    "hashed_password": password_validator.get_password_hash(
-                        user_create.password_one
-                    ),
-                }
+            user_dict = user_create.model_dump(exclude={"password_one", "password_two"})
+            user_dict["hashed_password"] = password_validator.get_password_hash(
+            user_create.password_one.get_secret_value()
             )
+
+            user = UserModel(**user_dict)  # pyright: ignore[reportAny]
             self.db.add(instance=user)
             await self.db.commit()
             await self.db.refresh(instance=user)

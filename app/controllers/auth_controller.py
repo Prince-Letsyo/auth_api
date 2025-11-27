@@ -1,9 +1,9 @@
 from typing import cast
 from jose import ExpiredSignatureError, JWTError
-from pydantic import BaseModel, EmailStr, ValidationInfo, field_validator
-from sqlmodel import Field, SQLModel
+from pydantic import BaseModel, EmailStr
 from app.core.exception import AppException, UnauthorizedException
 from app.schemas.user_schemas import (
+    ConfirmPasswords,
     UserModel,
     UserCreate,
     UserBase,
@@ -30,21 +30,6 @@ class ActivationEmail(BaseModel):
 class ActivateUserAccountResponse(UserBase):
     token: ActivateAccountToken
 
-
-class RestPassword(SQLModel):
-    password_one: str = Field(nullable=False, min_length=8)
-    password_two: str = Field(nullable=False, min_length=8)
-
-    @field_validator("password_two")
-    @classmethod
-    def validate_full_password(cls, v: str, info: ValidationInfo) -> str:
-        """Validate password match"""
-        values: dict[str, str] = info.data
-        password_one: str | None = values.get("password_one")
-
-        if not password_one or password_one != v:
-            raise ValueError("Passwords do not match")
-        return v
 
 
 class AuthController:
@@ -149,11 +134,11 @@ class AuthController:
         except JWTError:
             raise UnauthorizedException(message="Invalid token")
 
-    async def password_reset(self, token: str, rest_password: RestPassword):
+    async def password_reset(self, token: str, rest_password: ConfirmPasswords):
         try:
             payload: dict[str, str] = jwt_auth_token.decode_token(token=token)
             validation = password_validator.validate_password(
-                password=rest_password.password_one,
+                password=rest_password.password_one.get_secret_value(),
                 username=payload.get("username", ""),
                 email=payload.get("email", ""),
             )
@@ -161,7 +146,7 @@ class AuthController:
                 raise AppException(message=cast(str, validation["errors"][0]))
 
             user = await self.repository.update_user_password(
-                email=payload.get("email", ""), new_password=rest_password.password_one
+                email=payload.get("email", ""), new_password=rest_password.password_one.get_secret_value()
             )
             return user
         except ExpiredSignatureError:
