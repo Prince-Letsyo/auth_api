@@ -5,11 +5,17 @@ from app.core.env import env
 
 broker_url = env.CELERY_BROKER_URL
 
-celery_app = Celery("worker", broker=broker_url)
+celery_app = Celery(
+    "auth_api_worker",
+    broker=broker_url,
+    backend=env.REDIS_URL, 
+    include=[
+        "app.tasks.email_task",
+    ],
+)
 
 celery_app.conf.update(  # pyright: ignore[reportUnknownMemberType]
     # === Result backend (optional, can still be Redis) ===
-    result_backend=env.REDIS_URL,  # or rpc://, db+sqlite:// etc.
     redis_backend_use_ssl=False if config.env.ENV_MODE != "production" else True,
     redis_max_connections=20,
     result_backend_transport_options={
@@ -47,7 +53,7 @@ celery_app.conf.update(  # pyright: ignore[reportUnknownMemberType]
     task_acks_on_failure_or_timeout=False,
     worker_pool="solo",
     broker_connection_retry_on_startup=True,
-
     # Optional: also silence the old deprecated setting (just in case)
     broker_connection_retry=False,
 )
+

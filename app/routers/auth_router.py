@@ -1,3 +1,4 @@
+from celery import chain  # pyright: ignore[reportMissingTypeStubs]
 from fastapi import Depends, Request, status
 from typing import cast
 
@@ -14,6 +15,8 @@ from app.routers.base import CustomRouter
 from app.schemas.token_schemas import AccessToken
 from app.schemas.user_schemas import AuthLogin, ConfirmPasswords, UserCreate
 from app.tasks.email_task import (
+    log_task_failure,
+    log_task_success,
     send_activate_email,  # pyright: ignore[reportUnknownVariableType]
     send_password_reset_email,  # pyright: ignore[reportUnknownVariableType]
     send_welcome_email,  # pyright: ignore[reportUnknownVariableType]
@@ -21,7 +24,7 @@ from app.tasks.email_task import (
 from app.utils import is_valid_url
 
 
-auth_router: CustomRouter = CustomRouter(prefix="/auth", tags=["auth"])
+auth_router = CustomRouter(prefix="/auth", tags=["auth"])
 
 
 @auth_router.post(
@@ -42,10 +45,17 @@ async def sign_up(
     activation_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
     )
-    send_activate_email.delay(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
-        activate_user_response=activate_user_response.model_dump(),
-        activation_link=activation_link,
+    workflow = chain(
+        send_activate_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+            activate_user_response=activate_user_response.model_dump(),
+            activation_link=activation_link,
+        ),
+        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
+    workflow.link_error(  # pyright: ignore[reportUnknownMemberType]
+        log_task_failure.s()  # pyright: ignore[reportCallIssue]
+    )  
+    workflow.apply_async()   # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
     return {
         "message": "User created successfully. Please check your email to activate your account."
     }
@@ -86,9 +96,14 @@ async def activate_account(
     ),  # pyright: ignore[reportCallInDefaultInitializer]
 ):
     user = await auth_controller.activate_account(token=token)
-    send_welcome_email.delay(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
-        to_email={"name": user.username, "email": user.email},
+    workflow = chain(
+        send_welcome_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+            to_email={"name": user.username, "email": user.email},
+        ),
+        log_task_success.s(), # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
+    workflow.link_error(log_task_failure.s()) # pyright: ignore[reportUnknownMemberType, reportCallIssue]
+    workflow.apply_async()  # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
     return {"message": "Account activated successfully. You can now log in."}
 
 
@@ -113,10 +128,18 @@ async def send_activation_email(
     activation_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
     )
-    send_activate_email.delay(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
-        activate_user_response=activate_user_response.model_dump(),
-        activation_link=activation_link,
+    
+    workflow = chain(
+        send_activate_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+            activate_user_response=activate_user_response.model_dump(),
+            activation_link=activation_link,
+        ),
+        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
+    workflow.link_error(  # pyright: ignore[reportUnknownMemberType]
+        log_task_failure.s()  # pyright: ignore[reportCallIssue]
+    )
+    workflow.apply_async()   # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
     return {"message": "Activation email sent successfully. Please check your email."}
 
 
@@ -141,13 +164,21 @@ async def request_password_reset(
     reset_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
     )
-    send_password_reset_email.delay(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
-        to_email={
-            "name": activate_user_response.username,
-            "email": activate_user_response.email,
-        },
-        reset_link=reset_link,
+    workflow = chain(
+        send_password_reset_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+            to_email={  
+                "name": activate_user_response.username,
+                "email": activate_user_response.email,
+            },
+            reset_link=reset_link,
+        ),
+        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
+    workflow.link_error(  # pyright: ignore[reportUnknownMemberType]
+        log_task_failure.s()  # pyright: ignore[reportCallIssue]    
+    )
+    workflow.apply_async()   # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
+    
     return {"message": "A password reset link has been sent to your email."}
 
 
@@ -164,5 +195,5 @@ async def reset_password(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
 ):
-    _=await auth_controller.password_reset(token=token, rest_password=rest_password)
+    _ = await auth_controller.password_reset(token=token, rest_password=rest_password)
     return {"message": "Password has been reset successfully."}
