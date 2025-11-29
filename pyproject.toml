@@ -26,6 +26,7 @@ dependencies = [
     "pydantic[email]>=2.12.4",
     "pyotp>=2.9.0",
     "python-jose>=3.5.0",
+    "qrcode[pil]>=8.2",
     "redis>=7.1.0",
     "sqlalchemy>=2.0.44",
     "sqlmodel>=0.0.27",

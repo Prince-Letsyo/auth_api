@@ -30,3 +30,15 @@ class BaseAuthRepository(ABC):
         self, email: EmailStr, new_password: str
     ) -> UserModel:
         pass
+    
+    @abstractmethod
+    async def enable_2fa(
+        self, username: str, totp_secret: str
+    ) -> UserModel:
+        pass
+    
+    @abstractmethod
+    async def disable_2fa(
+        self, username: str
+    ) -> UserModel:
+        pass

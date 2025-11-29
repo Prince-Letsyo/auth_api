@@ -1,4 +1,3 @@
-from celery import chain  # pyright: ignore[reportMissingTypeStubs]
 from fastapi import Depends, Request, status
 from typing import cast
 
@@ -8,20 +7,26 @@ from app.controllers.auth_controller import (
     ActivateUserAccountResponse,
     ActivationEmail,
     AuthController,
+    PasswordResetRequest,
     UserResponse,
+    Verify2FARequest,
 )
 from app.core.dependencies import get_auth_controller
+from app.middlewares.request import get_current_user
 from app.routers.base import CustomRouter
 from app.schemas.token_schemas import AccessToken
-from app.schemas.user_schemas import AuthLogin, ConfirmPasswords, UserCreate
+from app.schemas.user_schemas import AuthLogin, UserCreate
 from app.tasks.email_task import (
-    log_task_failure,
     log_task_success,
     send_activate_email,  # pyright: ignore[reportUnknownVariableType]
     send_password_reset_email,  # pyright: ignore[reportUnknownVariableType]
     send_welcome_email,  # pyright: ignore[reportUnknownVariableType]
 )
+from app.tasks.utils import (
+    fire_and_forget,  # pyright: ignore[reportUnknownVariableType]
+)  
 from app.utils import is_valid_url
+from app.utils.auth.token import JWTPayload
 
 
 auth_router = CustomRouter(prefix="/auth", tags=["auth"])
@@ -45,17 +50,13 @@ async def sign_up(
     activation_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
     )
-    workflow = chain(
+    fire_and_forget(
         send_activate_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
             activate_user_response=activate_user_response.model_dump(),
             activation_link=activation_link,
         ),
         log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
-    workflow.link_error(  # pyright: ignore[reportUnknownMemberType]
-        log_task_failure.s()  # pyright: ignore[reportCallIssue]
-    )  
-    workflow.apply_async()   # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
     return {
         "message": "User created successfully. Please check your email to activate your account."
     }
@@ -67,20 +68,33 @@ async def sign_in(
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
-) -> UserResponse:
+):
     return await auth_controller.log_in(
         username=login_user.username, password=login_user.password.get_secret_value()
     )
 
 
-@auth_router.post(path="/access", response_model=AccessToken)
-async def get_access_token(
-    token_string: str,
+@auth_router.post(path="/sign-in-mfa", response_model=UserResponse)
+async def sign_in_mfa(
+    verify_2FA: Verify2FARequest,
+    token: str ,
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
 ):
-    return await auth_controller.get_access_token(token_string=token_string)
+    return await auth_controller.log_in_2fa(
+        token=token, totp_token=verify_2FA.totp_token
+    )
+
+
+@auth_router.post(path="/access", response_model=AccessToken)
+async def get_access_token(
+    token: str, 
+    auth_controller: AuthController = Depends(
+        dependency=get_auth_controller
+    ),  # pyright: ignore[reportCallInDefaultInitializer]
+):
+    return await auth_controller.get_access_token(token_string=token)
 
 
 @auth_router.get(
@@ -90,20 +104,18 @@ async def get_access_token(
     name="activate_account",
 )
 async def activate_account(
-    token: str,
+    token: str ,
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
 ):
     user = await auth_controller.activate_account(token=token)
-    workflow = chain(
+    fire_and_forget(
         send_welcome_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
             to_email={"name": user.username, "email": user.email},
         ),
-        log_task_success.s(), # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
+        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
-    workflow.link_error(log_task_failure.s()) # pyright: ignore[reportUnknownMemberType, reportCallIssue]
-    workflow.apply_async()  # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
     return {"message": "Account activated successfully. You can now log in."}
 
 
@@ -128,18 +140,14 @@ async def send_activation_email(
     activation_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
     )
-    
-    workflow = chain(
+
+    fire_and_forget(
         send_activate_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
             activate_user_response=activate_user_response.model_dump(),
             activation_link=activation_link,
         ),
         log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
-    workflow.link_error(  # pyright: ignore[reportUnknownMemberType]
-        log_task_failure.s()  # pyright: ignore[reportCallIssue]
-    )
-    workflow.apply_async()   # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
     return {"message": "Activation email sent successfully. Please check your email."}
 
 
@@ -164,9 +172,9 @@ async def request_password_reset(
     reset_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
     )
-    workflow = chain(
+    fire_and_forget(
         send_password_reset_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
-            to_email={  
+            to_email={
                 "name": activate_user_response.username,
                 "email": activate_user_response.email,
             },
@@ -174,11 +182,6 @@ async def request_password_reset(
         ),
         log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
     )
-    workflow.link_error(  # pyright: ignore[reportUnknownMemberType]
-        log_task_failure.s()  # pyright: ignore[reportCallIssue]    
-    )
-    workflow.apply_async()   # pyright: ignore[reportUnknownMemberType, reportUnusedCallResult]
-    
     return {"message": "A password reset link has been sent to your email."}
 
 
@@ -189,11 +192,48 @@ async def request_password_reset(
     name="reset_password",
 )
 async def reset_password(
+    rest_password: PasswordResetRequest,
     token: str,
-    rest_password: ConfirmPasswords,
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
 ):
     _ = await auth_controller.password_reset(token=token, rest_password=rest_password)
     return {"message": "Password has been reset successfully."}
+
+
+@auth_router.post(
+    path="/enable-2fa",
+    response_model=dict[str, str],
+    status_code=status.HTTP_200_OK,
+    name="enable_2fa",
+    dependencies=[Depends(dependency=get_current_user)],
+)
+async def enable_2fa(
+    request: Request,
+    auth_controller: AuthController = Depends(
+        dependency=get_auth_controller
+    ),  # pyright: ignore[reportCallInDefaultInitializer]
+):
+    payload = cast(JWTPayload, request.state.user)
+    result= await auth_controller.enable_2fa(username=payload["username"])
+    return {
+        **result,
+        "message": "2FA enabled. Scan with your app."
+    }
+
+@auth_router.post(
+    path="/disable-2fa",
+    response_model=dict[str, str],
+    status_code=status.HTTP_200_OK,
+    name="disable_2fa",
+    dependencies=[Depends(dependency=get_current_user)],
+)
+async def disable_2fa(
+    request: Request,
+    auth_controller: AuthController = Depends(
+        dependency=get_auth_controller
+    ),  # pyright: ignore[reportCallInDefaultInitializer]
+):
+    payload = cast(JWTPayload, request.state.user)
+    return await auth_controller.disable_2fa(username=payload["username"])

@@ -19,6 +19,11 @@ class ActivateAccountToken(SQLModel):
     duration:datetime=Field(sa_column=Column(DateTime(timezone=True), nullable=False))
 
     model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+class Temp2TAToken(SQLModel):
+    token: str = Field(nullable=False)
+    duration:datetime=Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+
+    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
 
 class TokenBase(SQLModel):
     access_token: str = Field(nullable=False)

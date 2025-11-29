@@ -1,8 +1,10 @@
 from typing import Any, cast
 from sqlmodel import (
+    Boolean,
     Relationship,
     SQLModel,
-    Field, # pyright: ignore[reportUnknownVariableType]
+    Field,   # pyright: ignore[reportUnknownVariableType]
+    String, 
 )  
 from pydantic import ConfigDict, EmailStr, SecretStr, ValidationInfo, field_validator
 
@@ -19,7 +21,7 @@ class UserBase(SQLModel):
     )
 
 
-class ConfirmPasswords(SQLModel):
+class ConfirmPasswordsMixin(SQLModel):
     password_one: SecretStr = Field(nullable=False, min_length=8)
     password_two: SecretStr = Field(nullable=False, min_length=8)
 
@@ -34,8 +36,7 @@ class ConfirmPasswords(SQLModel):
             raise ValueError("Passwords do not match")
         return v
 
-
-class UserCreate(UserBase, ConfirmPasswords):
+class UserCreate(ConfirmPasswordsMixin,  UserBase):
     @field_validator("password_one")
     @classmethod
     def validate_full_password_one(cls, v: SecretStr, info: ValidationInfo):
@@ -85,7 +86,19 @@ class UserModel(TimestampMixin, UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True, index=True)
     hashed_password: str = Field(nullable=False, max_length=256)
     is_active: bool = Field(default=False, nullable=False)
-
+    is_2fa_enabled: bool = Field(
+        sa_type=Boolean,
+        default=False,
+        nullable=False,
+        description="Whether 2FA is enabled for this user"
+    )
+    totp_secret: str|None = Field(
+        default=None,
+        sa_type=String(32),
+        nullable=True,
+        index=False,
+        description="Base32-encoded TOTP secret (16–32 chars)"
+    )
     profile: "ProfileModel" = cast(
         "ProfileModel",
         Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False}),

@@ -6,9 +6,10 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import iterate_in_threadpool
 from app.schemas.token_schemas import TokenError
-from app.utils.auth.token import jwt_auth_token
+from app.core.exception import UnauthorizedException
+from app.utils.auth.token import JWTPayloadWithExp, jwt_auth_token
 from app.utils.logging import main_logger, filter_sensitive
-from typing import Any, Callable
+from typing import Any, Callable, cast
 from collections.abc import Awaitable
 
 
@@ -18,9 +19,10 @@ async def jwt_decoder(
     token: str | None = request.headers.get("Authorization")
     if token and token.startswith("Bearer "):
         try:
-            payload: dict[str, str] = jwt_auth_token.decode_token(
+            payload: dict[str, str | bool] = jwt_auth_token.decode_token(
                 token=token.split(sep=" ")[1]
             )
+            request.cookies
             request.state.user = payload
         except ExpiredSignatureError:
             return JSONResponse(
@@ -102,3 +104,9 @@ async def logging_middleware(
         except Exception as e:
             main_logger.exception(f"Request failed: {e}")
             raise
+
+
+async def get_current_user(request: Request):
+    if request.state.user is None:  # pyright: ignore[reportAny]
+        raise UnauthorizedException(message="Unauthorized")
+    return cast(JWTPayloadWithExp, request.state.user)

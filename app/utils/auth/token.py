@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime, timezone
 from jose import jwt
 from app.config import config
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict, cast, NotRequired
 
 SECRET_KEY: str = config.env.SECRET_KEY
 ALGORITHM: str = config.env.ALGORITHM
@@ -13,7 +13,8 @@ REFRESH_TOKEN_EXPIRE_WEEKS: int = config.env.REFRESH_TOKEN_EXPIRE_WEEKS
 class JWTPayload(TypedDict):
     username: str
     email: str
-    user_id:int
+    user_id: int
+    mfa_pending: NotRequired[bool]
 
 
 class JWTPayloadWithExp(JWTPayload):
@@ -93,7 +94,7 @@ class JWTAuthToken:
             expires_delta=timedelta(weeks=float(REFRESH_TOKEN_EXPIRE_WEEKS)),
         )
 
-    def decode_token(self, token: str) -> dict[str, str]:
+    def decode_token(self, token: str) -> dict[str, str|bool]:
         """Decodes all types of tokens
 
         Args:
@@ -112,6 +113,21 @@ class JWTAuthToken:
             return payload
         except Exception as e:
             raise e
+
+    def create_temp_2fa_token(self, data: JWTPayload) -> tuple[str, datetime]:
+        """Create temporary 2FA JWT token that should last for about 5 minutes
+
+        Args:
+            data (JWTPayload): payload
+        Returns:
+            tuple[str, datetime]: token string and expiration datetime
+        """
+        return self.__create_token(
+            data,
+            expires_delta=timedelta(
+                minutes=float(config.env.TEMP_2FA_TOKEN_EXPIRE_MINUTES)
+            ),
+        )
 
 
 jwt_auth_token: JWTAuthToken = JWTAuthToken()

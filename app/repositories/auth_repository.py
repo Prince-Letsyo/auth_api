@@ -20,7 +20,7 @@ class AuthRepository(BaseAuthRepository):
         try:
             user_dict = user_create.model_dump(exclude={"password_one", "password_two"})
             user_dict["hashed_password"] = password_validator.get_password_hash(
-            user_create.password_one.get_secret_value()
+                user_create.password_one.get_secret_value()
             )
 
             user = UserModel(**user_dict)  # pyright: ignore[reportAny]
@@ -116,5 +116,31 @@ class AuthRepository(BaseAuthRepository):
             raise NotFoundException(
                 message=f"User with email '{email}' does not exist",
             )
+        except Exception as e:
+            raise e
+
+    @override
+    async def enable_2fa(self, username: str, totp_secret: str) -> UserModel:
+        try:
+            user: UserModel = await self.get_user_by_username(username=username)
+            user.is_2fa_enabled = True
+            user.totp_secret = totp_secret
+            self.db.add(instance=user)
+            await self.db.commit()
+            await self.db.refresh(instance=user)
+            return user
+        except Exception as e:
+            raise e
+        
+    @override
+    async def disable_2fa(self, username: str) -> UserModel:
+        try:
+            user: UserModel = await self.get_user_by_username(username=username)
+            user.is_2fa_enabled = False
+            user.totp_secret = None
+            self.db.add(instance=user)
+            await self.db.commit()
+            await self.db.refresh(instance=user)
+            return user
         except Exception as e:
             raise e

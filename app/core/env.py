@@ -13,6 +13,7 @@ class EnvConfig(BaseSettings):
     VERSION: str = Field(default="1.0.0")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
     REFRESH_TOKEN_EXPIRE_WEEKS: int = Field(default=4)
+    TEMP_2FA_TOKEN_EXPIRE_MINUTES: int = Field(default=5)
     DB_URL: HttpUrl | str | None = None  # Optional URL
     DB_HOST: HttpUrl | str | None = None  # Optional URL
     DB_NAME: str | None = None  # Optional URL
