@@ -1,6 +1,7 @@
 from typing import Any, override
 from fastapi.routing import APIRouter
-from src.routers.errors import ErrorResponse, ValidationErrorResponse
+
+from src.core.router.errors import ErrorResponse, ValidationErrorResponse
 
 
 ID_LIST=["{id}", "{slug}", "{uuid}"]

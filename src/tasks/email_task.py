@@ -15,15 +15,14 @@ def log_task_success(result:dict[str,str]):
     # This is where you could trigger a database update or another non-critical task.
 
 @shared_task(bind=True)  # pyright: ignore[reportAny]
-def log_task_failure(self, task_id, exc, traceback):  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+def log_task_failure(self, task_id):  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
     """
     Logs the failure of any task that links to it using link_error.
     The task ID, exception, and traceback are automatically passed by Celery.
     """
     main_logger.error(f"❌ Celery Task Failure Handler Triggered")
     main_logger.error(f"   Task ID: {task_id}")
-    main_logger.error(f"   Exception: {exc}")
-    main_logger.error(f"   Traceback:\n{traceback}")
+
 
 
 @celery_app.task(  # pyright: ignore[reportUnknownMemberType, reportUntypedFunctionDecorator]

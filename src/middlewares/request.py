@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse, Response
 from jose.exceptions import ExpiredSignatureError, JWTError
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import iterate_in_threadpool
-from src.schemas.token_schemas import TokenError
+from src.auth.schemas.token import TokenError
 from src.core.exception import UnauthorizedException
 from src.utils.auth.token import JWTPayloadWithExp, jwt_auth_token
 from src.utils.logging import main_logger, filter_sensitive

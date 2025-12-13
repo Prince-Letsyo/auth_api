@@ -6,10 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from typing import Any
 
+from src.api import register_api_routes
 from src.config import config
 from src.core.db import init_db
 from src.core.redis import init_redis
-from src.routers.auth_router import auth_router
 from src.utils.logging import main_logger
 from src.core.exception import AppException
 from src.middlewares.exception import (
@@ -112,8 +112,7 @@ _ = app.middleware(middleware_type="http")(jwt_decoder)
 _ = app.middleware(middleware_type="http")(logging_middleware)
 
 
-app.include_router(router=auth_router)
-
+register_api_routes(app)
 
 @app.get("/")
 def index():

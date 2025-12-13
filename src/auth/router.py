@@ -2,20 +2,21 @@ from fastapi import Depends, Request, status
 from typing import cast
 
 
+from src.auth.controller import AuthController
 from src.config import config
-from src.controllers.auth_controller import (
+from src.core.dependencies import get_auth_controller
+from src.middlewares.request import get_current_user
+from src.core.router.base import CustomRouter
+from src.auth.schemas.token import AccessToken
+from src.auth.schemas.auth import (
     ActivateUserAccountResponse,
     ActivationEmail,
-    AuthController,
+    AuthLogin,
     PasswordResetRequest,
+    UserCreate,
     UserResponse,
     Verify2FARequest,
 )
-from src.core.dependencies import get_auth_controller
-from src.middlewares.request import get_current_user
-from src.routers.base import CustomRouter
-from src.schemas.token_schemas import AccessToken
-from src.schemas.user_schemas import AuthLogin, UserCreate
 from src.tasks.email_task import (
     log_task_success,
     send_activate_email,  # pyright: ignore[reportUnknownVariableType]
@@ -24,12 +25,12 @@ from src.tasks.email_task import (
 )
 from src.tasks.utils import (
     fire_and_forget,  # pyright: ignore[reportUnknownVariableType]
-)  
+)
 from src.utils import is_valid_url
 from src.utils.auth.token import JWTPayload
 
 
-auth_router = CustomRouter(prefix="/auth", tags=["auth"])
+auth_router = CustomRouter(prefix="/auth", tags=["Authentication"])
 
 
 @auth_router.post(
@@ -77,7 +78,7 @@ async def sign_in(
 @auth_router.post(path="/sign-in-mfa", response_model=UserResponse)
 async def sign_in_mfa(
     verify_2FA: Verify2FARequest,
-    token: str ,
+    token: str,
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
@@ -89,7 +90,7 @@ async def sign_in_mfa(
 
 @auth_router.post(path="/access", response_model=AccessToken)
 async def get_access_token(
-    token: str, 
+    token: str,
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
@@ -104,7 +105,7 @@ async def get_access_token(
     name="activate_account",
 )
 async def activate_account(
-    token: str ,
+    token: str,
     auth_controller: AuthController = Depends(
         dependency=get_auth_controller
     ),  # pyright: ignore[reportCallInDefaultInitializer]
@@ -216,11 +217,9 @@ async def enable_2fa(
     ),  # pyright: ignore[reportCallInDefaultInitializer]
 ):
     payload = cast(JWTPayload, request.state.user)
-    result= await auth_controller.enable_2fa(username=payload["username"])
-    return {
-        **result,
-        "message": "2FA enabled. Scan with your app."
-    }
+    result = await auth_controller.enable_2fa(username=payload["username"])
+    return {**result, "message": "2FA enabled. Scan with your app."}
+
 
 @auth_router.post(
     path="/disable-2fa",
