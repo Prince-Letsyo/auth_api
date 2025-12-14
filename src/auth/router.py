@@ -27,7 +27,7 @@ from src.tasks.utils import (
     fire_and_forget,  # pyright: ignore[reportUnknownVariableType]
 )
 from src.utils import is_valid_url
-from src.utils.auth.token import JWTPayload
+from src.auth.schemas.token import JWTPayload
 
 
 auth_router = CustomRouter(prefix="/auth", tags=["Authentication"])
@@ -46,7 +46,7 @@ async def sign_up(
     activate_user_response: ActivateUserAccountResponse = await auth_controller.sign_up(
         user_create=user_create
     )
-    FRONTEND_URL = cast(str, config.env.FRONTEND_URL)
+    FRONTEND_URL = cast(str, config.env.frontend_url)
     link = request.url_for("activate_account")
     activation_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
@@ -136,7 +136,7 @@ async def send_activation_email(
     activate_user_response: ActivateUserAccountResponse = (
         await auth_controller.send_activation_email(email=user_email.email)
     )
-    FRONTEND_URL = cast(str, config.env.FRONTEND_URL)
+    FRONTEND_URL = cast(str, config.env.frontend_url)
     link = request.url_for("activate_account")
     activation_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"
@@ -168,7 +168,7 @@ async def request_password_reset(
     activate_user_response = await auth_controller.request_password_reset(
         email=user_email.email
     )
-    FRONTEND_URL = cast(str, config.env.FRONTEND_URL)
+    FRONTEND_URL = cast(str, config.env.frontend_url)
     link = request.url_for("reset_password")
     reset_link: str = (
         f"{FRONTEND_URL+link.path if is_valid_url(url=FRONTEND_URL) else link}?token={activate_user_response.token.token}"

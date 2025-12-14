@@ -31,7 +31,7 @@ env_configs: dict[str, CONFIG_TYPE] = {
 
 # Merge base config with environment-specific config
 base_config: BaseConfig = BaseConfig()
-env_config: CONFIG_TYPE = env_configs[env.ENV_MODE]
+env_config: CONFIG_TYPE = env_configs[env.env_mode]
 
 config: Config = Config(
     app_name=base_config.app_name,

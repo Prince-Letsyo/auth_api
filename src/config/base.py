@@ -16,8 +16,8 @@ class BaseConfig(BaseModel):
 class DatabaseConfigMIXIN(BaseModel):
     def migrate_url(self):
         return (
-            f"{env.DB_DRIVER}://{env.DB_USER}:{env.DB_PWD}@{env.DB_HOST}/{env.DB_NAME}"
+            f"{env.database.driver}://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"
         )
 
     def session_url(self):
-        return f"{env.DB_DRIVER}+psycopg://{env.DB_USER}:{env.DB_PWD}@{env.DB_HOST}/{env.DB_NAME}"
+        return f"{env.database.driver}+psycopg://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"

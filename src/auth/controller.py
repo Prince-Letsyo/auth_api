@@ -3,13 +3,13 @@ import qrcode
 from typing import cast
 from jose import ExpiredSignatureError, JWTError
 from src.auth.schemas.auth import ActivateUserAccountResponse, PasswordResetRequest, UserCreate, UserResponse
-from src.auth.schemas.token import AccessToken, ActivateAccountToken, RefreshToken, Temp2TAToken, TokenModel
+from src.auth.schemas.token import AccessToken, ActivateAccountToken, JWTPayload, RefreshToken, Temp2TAToken, TokenModel
+from src.auth.util.mfa import generate_totp_secret, get_totp_uri, verify_totp
+from src.auth.util.password import password_validator
+from src.auth.util.token import jwt_auth_token
 from src.core.exception import AppException, UnauthorizedException
 from src.entities.user_entity import UserModel
 from src.auth.repositories.base import BaseAuthRepository
-from src.utils.auth.mfa import generate_totp_secret, get_totp_uri, verify_totp
-from src.utils.auth.token import JWTPayload, jwt_auth_token
-from src.utils.auth.password import password_validator
 
 
 

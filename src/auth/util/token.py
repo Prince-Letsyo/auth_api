@@ -1,24 +1,14 @@
 from datetime import timedelta, datetime, timezone
 from jose import jwt
+from src.auth.schemas.token import JWTPayload, JWTPayloadWithExp
 from src.config import config
-from typing import Any, TypedDict, cast, NotRequired
+from typing import Any, cast
 
-SECRET_KEY: str = config.env.SECRET_KEY
-ALGORITHM: str = config.env.ALGORITHM
+SECRET_KEY: str = config.env.token.secret_key
+ALGORITHM: str = config.env.token.algorithm
 
-ACCESS_TOKEN_EXPIRE_MINUTES: int = config.env.ACCESS_TOKEN_EXPIRE_MINUTES
-REFRESH_TOKEN_EXPIRE_WEEKS: int = config.env.REFRESH_TOKEN_EXPIRE_WEEKS
-
-
-class JWTPayload(TypedDict):
-    username: str
-    email: str
-    user_id: int
-    mfa_pending: NotRequired[bool]
-
-
-class JWTPayloadWithExp(JWTPayload):
-    exp: datetime
+ACCESS_TOKEN_EXPIRE_MINUTES: int = config.env.token.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_WEEKS: int = config.env.token.refresh_token_expire_weeks
 
 
 class JWTAuthToken:
@@ -125,7 +115,7 @@ class JWTAuthToken:
         return self.__create_token(
             data,
             expires_delta=timedelta(
-                minutes=float(config.env.TEMP_2FA_TOKEN_EXPIRE_MINUTES)
+                minutes=float(config.env.token.temp_2fa_token_expire_minutes)
             ),
         )
 

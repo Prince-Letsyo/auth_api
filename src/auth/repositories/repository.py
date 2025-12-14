@@ -7,7 +7,7 @@ from typing import override
 
 from src.entities.user_entity import UserModel
 from src.auth.schemas.auth import UserCreate
-from src.utils.auth.password import password_validator
+from src.auth.util.password import password_validator
 from src.core.exception import AppException, ConflictException, NotFoundException
 from src.auth.repositories.base import BaseAuthRepository
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import NotRequired, TypedDict
 from sqlmodel import Column, SQLModel, Field,DateTime  # pyright: ignore[reportUnknownVariableType]
 from pydantic import ConfigDict
 
@@ -48,3 +49,15 @@ class TokenData(SQLModel):
     user_id: int | None = None
     exp: int | None = None
     model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+class JWTPayload(TypedDict):
+    username: str
+    email: str
+    user_id: int
+    mfa_pending: NotRequired[bool]
+
+
+class JWTPayloadWithExp(JWTPayload):
+    exp: datetime
+

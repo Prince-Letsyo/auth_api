@@ -7,7 +7,7 @@ from pydantic import ConfigDict, EmailStr, SecretStr, ValidationInfo, field_vali
 from pydantic import BaseModel
 from src.auth.schemas.token import ActivateAccountToken, Temp2TAToken, TokenModel
 from src.schemas.user_schemas import UserBase
-from src.utils.auth.password import password_validator
+from src.auth.util.password import password_validator
 
 class ConfirmPasswordsMixin(SQLModel):
     password_one: SecretStr = Field(nullable=False, min_length=8)

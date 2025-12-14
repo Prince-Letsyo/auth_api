@@ -3,12 +3,12 @@ from celery import Celery  # pyright: ignore[reportMissingTypeStubs]
 from src.config import config
 from src.core.env import env
 
-broker_url = env.CELERY_BROKER_URL
+broker_url = env.celery_broker_url or "celery://guest:guest@localhost:5672//"
 
 celery_app = Celery(
     "auth_api_worker",
     broker=broker_url,
-    backend=env.REDIS_URL, 
+    backend=env.redis.url or "redis://localhost", 
     include=[
         "src.tasks.email_task",
     ],
@@ -16,7 +16,7 @@ celery_app = Celery(
 
 celery_app.conf.update(  # pyright: ignore[reportUnknownMemberType]
     # === Result backend (optional, can still be Redis) ===
-    redis_backend_use_ssl=False if config.env.ENV_MODE != "production" else True,
+    redis_backend_use_ssl=False if config.env.env_mode != "production" else True,
     redis_max_connections=20,
     result_backend_transport_options={
         "global_keyprefix": "auth_api:celery:",  # ← prefix all keys

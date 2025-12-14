@@ -57,7 +57,7 @@ def custom_openapi() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
 
     openapi_schema: dict[str, Any] = get_openapi(  # pyright: ignore[reportExplicitAny]
         title=config.app_name,
-        version=config.env.VERSION,
+        version=config.env.version,
         description="A simple Task Management API built with FastAPI",
         contact={"name": "Prince Kumar", "email": "test@gm.com"},
         routes=app.routes,

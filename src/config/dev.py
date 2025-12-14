@@ -5,7 +5,7 @@ from src.core.env import env
 
 
 class DatabaseConfig(DatabaseConfigMIXIN):
-    url: HttpUrl | str | None = env.DB_URL
+    url: HttpUrl | str | None = env.database.url
     logging: bool = True
 
 

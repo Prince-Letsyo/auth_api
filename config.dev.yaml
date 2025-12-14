@@ -1,0 +1,27 @@
+# config.yaml
+env_mode: development
+version: 1.0.0
+port: 3000
+api_key: sk-your-api-key-here
+frontend_url: null  # Empty in .env, so set to null
+celery_broker_url: amqp://guest:guest@localhost:5672/auth_api_app
+
+redis:
+  url: redis://localhost
+  cache_expire: 300
+
+token:
+  secret_key: c54e0c022aee46c6fd4c606dd133a3a30e36dcea7ce79107e85b99a248885d81
+  algorithm: HS256
+  access_token_expire_minutes: 30
+  refresh_token_expire_weeks: 4
+  temp_2fa_token_expire_minutes: 5
+
+database:  # Nested section for all DB-related config
+  url: postgresql+asyncpg://postgres:postgres@localhost/auth_api_db
+  name: auth_api_db
+  pwd: postgres
+  user: postgres
+  host: localhost
+  driver: postgresql
+  test_name: test_auth_api_db

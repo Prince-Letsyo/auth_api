@@ -4,7 +4,7 @@ from src.core.env import env
 
 
 class DatabaseConfig(DatabaseConfigMIXIN):
-    url: HttpUrl | str | None = env.DB_URL  # Use validated env variable
+    url: HttpUrl | str | None = env.database.url
     logging: bool = False
 
 
@@ -13,8 +13,8 @@ class FeaturesConfig(BaseModel):
 
 
 class RedisConfig(BaseModel):
-    url: HttpUrl | str | None = env.REDIS_URL  # Use validated env variable
-    cache_expire: int | None = env.REDIS_CACHE_EXPIRE
+    url: HttpUrl | str | None = env.redis.url
+    cache_expire: int | None = env.redis.cache_expire
 
 
 class ProdConfig(BaseModel):

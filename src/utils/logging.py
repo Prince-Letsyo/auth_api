@@ -16,7 +16,7 @@ def app_logger():
         rotation="10 MB",
         retention="7 days",
         level=(
-            "DEBUG" if config.env.ENV_MODE in {"development", "test"} else "INFO"
+            "DEBUG" if config.env.env_mode in {"development", "test"} else "INFO"
         ),
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {extra} | {message}",
         enqueue=True,
