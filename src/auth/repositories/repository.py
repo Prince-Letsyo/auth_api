@@ -1,15 +1,17 @@
+from typing import override
+
 from pydantic import EmailStr
-from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import ScalarResult
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlmodel import select
-from typing import override
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.entities.user_entity import UserModel
+from src.auth.repositories.base import BaseAuthRepository
 from src.auth.schemas.auth import UserCreate
 from src.auth.util.password import password_validator
-from src.core.exception import AppException, ConflictException, NotFoundException
-from src.auth.repositories.base import BaseAuthRepository
+from src.core.exception import (AppException, ConflictException,
+                                NotFoundException)
+from src.entities.user_entity import UserModel
 
 
 class AuthRepository(BaseAuthRepository):
@@ -132,7 +134,7 @@ class AuthRepository(BaseAuthRepository):
             return user
         except Exception as e:
             raise e
-        
+
     @override
     async def disable_2fa(self, username: str) -> UserModel:
         try:

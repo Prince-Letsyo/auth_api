@@ -1,9 +1,11 @@
 import json
 from typing import cast
-from redis.exceptions import ConnectionError
+
 from fastapi_cache import FastAPICache, JsonCoder
 from fastapi_cache.backends.redis import RedisBackend
 from redis.asyncio import Redis
+from redis.exceptions import ConnectionError
+
 from src.config import config
 
 

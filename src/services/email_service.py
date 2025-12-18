@@ -1,29 +1,33 @@
-from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
-from pydantic import DirectoryPath, SecretStr, NameEmail
 from typing import Any, cast
 
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pydantic import DirectoryPath, NameEmail, SecretStr
+
+from src.config import config
 from src.utils.logging import main_logger
+
 
 class EmailServiceTransientError(Exception):
     """Exception indicating a temporary, retryable failure in email sending (e.g., network error)."""
     pass
 
+
 class EmailService:
     def __init__(self) -> None:
         self.conf: ConnectionConfig = ConnectionConfig(
-            MAIL_USERNAME="",
-            MAIL_PASSWORD=SecretStr(""),
-            MAIL_FROM="no-reply@example.com",
-            MAIL_PORT=1025,
-            MAIL_SERVER="127.0.0.1",
-            MAIL_STARTTLS=False,
-            MAIL_SSL_TLS=False,
+            MAIL_USERNAME=config.env.smtp_server.username,
+            MAIL_PASSWORD=SecretStr(config.env.smtp_server.password),
+            MAIL_FROM=config.env.smtp_server.from_email,
+            MAIL_PORT=config.env.smtp_server.port,
+            MAIL_SERVER=config.env.smtp_server.server,
+            MAIL_STARTTLS=config.env.smtp_server.use_tls,
+            MAIL_SSL_TLS=config.env.smtp_server.use_ssl,
             TEMPLATE_FOLDER=Path(__file__).resolve().parents[1] / "templates",
-            LOCAL_HOSTNAME="localhost",
-            VALIDATE_CERTS=False,
-            USE_CREDENTIALS=False,
+            LOCAL_HOSTNAME=config.env.smtp_server.hostname,
+            VALIDATE_CERTS=config.env.smtp_server.validate_certs,
+            USE_CREDENTIALS=config.env.smtp_server.credentials,
         )
         self.mail: FastMail = FastMail(config=self.conf)
         self.template_env: Environment = Environment(

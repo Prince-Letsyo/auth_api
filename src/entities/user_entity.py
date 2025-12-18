@@ -1,7 +1,8 @@
-
-
 from typing import cast
-from sqlmodel import Boolean, Field, Relationship, SQLModel, String  # pyright: ignore[reportUnknownVariableType]
+
+from sqlmodel import Boolean  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import Field, Relationship, SQLModel, String
+
 from src.entities.base import TimestampMixin
 from src.schemas.user_schemas import UserBase
 
@@ -17,14 +18,14 @@ class UserModel(TimestampMixin, UserBase, table=True):
         sa_type=Boolean,
         default=False,
         nullable=False,
-        description="Whether 2FA is enabled for this user"
+        description="Whether 2FA is enabled for this user",
     )
-    totp_secret: str|None = Field(
+    totp_secret: str | None = Field(
         default=None,
         sa_type=String(32),
         nullable=True,
         index=False,
-        description="Base32-encoded TOTP secret (16–32 chars)"
+        description="Base32-encoded TOTP secret (16–32 chars)",
     )
     profile: "ProfileModel" = cast(
         "ProfileModel",
@@ -42,4 +43,3 @@ class ProfileModel(SQLModel, table=True):
     avatar_url: str = Field(default=False, nullable=True)
 
     user: UserModel | None = cast(UserModel, Relationship(back_populates="profile"))
-

@@ -1,16 +1,21 @@
-from pydantic import EmailStr
-import qrcode
 from typing import cast
+
+import qrcode
 from jose import ExpiredSignatureError, JWTError
-from src.auth.schemas.auth import ActivateUserAccountResponse, PasswordResetRequest, UserCreate, UserResponse
-from src.auth.schemas.token import AccessToken, ActivateAccountToken, JWTPayload, RefreshToken, Temp2TAToken, TokenModel
+from pydantic import EmailStr
+
+from src.auth.repositories.base import BaseAuthRepository
+from src.auth.schemas.auth import (ActivateUserAccountResponse,
+                                   PasswordResetRequest, UserCreate,
+                                   UserResponse)
+from src.auth.schemas.token import (AccessToken, ActivateAccountToken,
+                                    JWTPayload, RefreshToken, Temp2TAToken,
+                                    TokenModel)
 from src.auth.util.mfa import generate_totp_secret, get_totp_uri, verify_totp
 from src.auth.util.password import password_validator
 from src.auth.util.token import jwt_auth_token
 from src.core.exception import AppException, UnauthorizedException
 from src.entities.user_entity import UserModel
-from src.auth.repositories.base import BaseAuthRepository
-
 
 
 class AuthController:
@@ -98,15 +103,15 @@ class AuthController:
                 raise UnauthorizedException(message="2FA is not pending for this token")
             username: str = cast(str, payload.get("username"))
             user = await self.repository.get_user_by_username(username=username)
-            
+
             if not user.is_2fa_enabled:
                 raise UnauthorizedException(message="2FA is not enabled for this user")
-            
+
             if not verify_totp(
                 token=totp_token, totp_secret=cast(str, user.totp_secret)
             ):
                 raise UnauthorizedException(message="Invalid TOTP token")
-            
+
             return self.__prepare_token_data(user, totp_provided=True)
         except ExpiredSignatureError:
             raise UnauthorizedException(
@@ -179,7 +184,8 @@ class AuthController:
         )
         qr = qrcode.make(uri)
 
-        import io, base64
+        import base64
+        import io
 
         buffer = io.BytesIO()
         qr.save(buffer, kind="png")

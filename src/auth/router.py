@@ -1,34 +1,23 @@
-from fastapi import Depends, Request, status
 from typing import cast
 
+from fastapi import Depends, Request, status
 
 from src.auth.controller import AuthController
+from src.auth.schemas.auth import (ActivateUserAccountResponse,
+                                   ActivationEmail, AuthLogin,
+                                   PasswordResetRequest, UserCreate,
+                                   UserResponse, Verify2FARequest)
+from src.auth.schemas.token import AccessToken, JWTPayload
 from src.config import config
 from src.core.dependencies import get_auth_controller
-from src.middlewares.request import get_current_user
 from src.core.router.base import CustomRouter
-from src.auth.schemas.token import AccessToken
-from src.auth.schemas.auth import (
-    ActivateUserAccountResponse,
-    ActivationEmail,
-    AuthLogin,
-    PasswordResetRequest,
-    UserCreate,
-    UserResponse,
-    Verify2FARequest,
-)
-from src.tasks.email_task import (
-    log_task_success,
-    send_activate_email,  # pyright: ignore[reportUnknownVariableType]
-    send_password_reset_email,  # pyright: ignore[reportUnknownVariableType]
-    send_welcome_email,  # pyright: ignore[reportUnknownVariableType]
-)
-from src.tasks.utils import (
-    fire_and_forget,  # pyright: ignore[reportUnknownVariableType]
-)
+from src.middlewares.request import get_current_user
+from src.tasks.email_task import (  # pyright: ignore[reportUnknownVariableType]
+    log_task_success, send_activate_email, send_password_reset_email,
+    send_welcome_email)
+from src.tasks.utils import \
+    fire_and_forget  # pyright: ignore[reportUnknownVariableType]
 from src.utils import is_valid_url
-from src.auth.schemas.token import JWTPayload
-
 
 auth_router = CustomRouter(prefix="/auth", tags=["Authentication"])
 

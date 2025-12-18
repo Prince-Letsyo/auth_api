@@ -1,4 +1,5 @@
 from typing import override
+
 from pydantic import BaseModel, HttpUrl
 
 from src.config.base import DatabaseConfigMIXIN

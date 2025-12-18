@@ -8,7 +8,7 @@ broker_url = env.celery_broker_url or "celery://guest:guest@localhost:5672//"
 celery_app = Celery(
     "auth_api_worker",
     broker=broker_url,
-    backend=env.redis.url or "redis://localhost", 
+    backend=env.redis.url or "redis://localhost",
     include=[
         "src.tasks.email_task",
     ],
@@ -56,4 +56,3 @@ celery_app.conf.update(  # pyright: ignore[reportUnknownMemberType]
     # Optional: also silence the old deprecated setting (just in case)
     broker_connection_retry=False,
 )
-

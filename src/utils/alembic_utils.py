@@ -1,6 +1,7 @@
 from pathlib import Path
-from alembic.config import Config
+
 from alembic import command
+from alembic.config import Config
 
 # ----------------------------------------------------------------------
 # 1. Resolve the *absolute* path to alembic.ini (project root)

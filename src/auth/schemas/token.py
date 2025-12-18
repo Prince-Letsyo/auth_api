@@ -1,42 +1,70 @@
 from datetime import datetime
 from typing import NotRequired, TypedDict
-from sqlmodel import Column, SQLModel, Field,DateTime  # pyright: ignore[reportUnknownVariableType]
+
 from pydantic import ConfigDict
+from sqlmodel import Column  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import DateTime, Field, SQLModel
 
 
 class AccessToken(SQLModel):
     token: str = Field(nullable=False)
-    duration:datetime=Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    duration: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
 
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
+
 
 class RefreshToken(SQLModel):
     token: str = Field(nullable=False)
-    duration:datetime=Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    duration: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
 
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
 class ActivateAccountToken(SQLModel):
     token: str = Field(nullable=False)
-    duration:datetime=Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    duration: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
 
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
 class Temp2TAToken(SQLModel):
     token: str = Field(nullable=False)
-    duration:datetime=Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    duration: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
 
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
+
 
 class TokenBase(SQLModel):
     access_token: str = Field(nullable=False)
     token_type: str = Field(nullable=False)
 
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
 class TokenModel(SQLModel):
     access_token: AccessToken
     refresh_token: RefreshToken
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
 class TokenError(SQLModel):
@@ -48,7 +76,9 @@ class TokenData(SQLModel):
     scopes: list[str] = []
     user_id: int | None = None
     exp: int | None = None
-    model_config: ConfigDict = ConfigDict(from_attributes=True)  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
 class JWTPayload(TypedDict):
@@ -60,4 +90,3 @@ class JWTPayload(TypedDict):
 
 class JWTPayloadWithExp(JWTPayload):
     exp: datetime
-

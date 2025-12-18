@@ -1,12 +1,13 @@
 import asyncio
-from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
 from src.config import config
 from src.utils.alembic_utils import upgrade_database
-
 
 # Create async engine
 engine: AsyncEngine = create_async_engine(url=config.database.session_url(), echo=False)

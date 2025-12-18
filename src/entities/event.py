@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Any, Protocol, cast
+
 from sqlalchemy import Connection, event
 from sqlalchemy.orm import Mapper, Session
 
@@ -38,5 +39,7 @@ def create_profile(
     """
 
     _ = connection.execute(  # pyright: ignore[reportUnknownVariableType]
-        ProfileModel.__table__.insert().values(user_id=target.id)  # pyright: ignore[ reportUnknownArgumentType, reportUnknownMemberType, reportAttributeAccessIssue]
-    )  
+        ProfileModel.__table__.insert().values(
+            user_id=target.id
+        )  # pyright: ignore[ reportUnknownArgumentType, reportUnknownMemberType, reportAttributeAccessIssue]
+    )

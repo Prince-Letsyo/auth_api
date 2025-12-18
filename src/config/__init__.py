@@ -1,5 +1,7 @@
 from pydantic import BaseModel
+
 from src.core.env import EnvConfig, env
+
 from .base import BaseConfig
 from .dev import DevConfig
 from .prod import ProdConfig
@@ -15,7 +17,7 @@ class Config(BaseModel):
     app_name: str
     enable_cors: bool
     log_level: str
-    cache_name:str
+    cache_name: str
     database: DATABASE_CONFIG_TYPE
     features: FEATURES_CONFIG_TYPE
     redis: REDIS_CONFIG_TYPE

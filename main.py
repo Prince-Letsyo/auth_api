@@ -1,3 +1,12 @@
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src:app", host="127.0.0.1", port=8000, reload=True, log_level="info") 
+
+    from src.config import config
+
+    uvicorn.run(
+        config.env.app,
+        host=config.env.host,
+        port=config.env.port,
+        reload=config.env.reload,
+        log_level=config.env.log_level,
+    )

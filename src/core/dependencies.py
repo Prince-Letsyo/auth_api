@@ -1,4 +1,5 @@
 from typing import ClassVar, Self
+
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -6,7 +7,6 @@ from src.auth.controller import AuthController
 from src.auth.repositories.base import BaseAuthRepository
 from src.auth.repositories.repository import AuthRepository
 from src.core.db import get_db_session
-
 
 
 class DependencyContainer:

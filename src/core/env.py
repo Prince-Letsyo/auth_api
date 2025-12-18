@@ -1,7 +1,9 @@
 import sys
-from pydantic import BaseModel, Field, HttpUrl
-from pydantic_settings import BaseSettings, SettingsConfigDict, YamlConfigSettingsSource
 from typing import Literal, override
+
+from pydantic import BaseModel, EmailStr, Field, HttpUrl
+from pydantic_settings import (BaseSettings, SettingsConfigDict,
+                               YamlConfigSettingsSource)
 from pydantic_settings.sources import PydanticBaseSettingsSource
 
 
@@ -28,7 +30,23 @@ class RedisConfig(BaseModel):
     cache_expire: int = 300
 
 
+class SmtpServerConfig(BaseModel):
+    username: str = ""
+    password: str = ""
+    from_email: EmailStr = Field(default="no-reply@example.com", min_length=5)
+    hostname: str = Field(default="localhost", min_length=1)
+    port: int = Field(default=25, gt=0)
+    use_tls: bool = Field(default=False)
+    use_ssl: bool = Field(default=False)
+    credentials: bool = Field(default=False)
+    validate_certs: bool = Field(default=True)
+    server: str = Field(default="127.0.0.1", min_length=1)
+
 class EnvConfig(BaseSettings):
+    app: str = "src:app"
+    host: str = "127.0.01"
+    reload: bool = True
+    log_level: str = "info"
     env_mode: Literal["development", "production", "test"] = "development"
     port: int = Field(default=3000, gt=0)
     api_key: str = Field(default="", min_length=1)
@@ -36,11 +54,12 @@ class EnvConfig(BaseSettings):
     redis: RedisConfig = RedisConfig()
     token: TokenConfig = TokenConfig()
     database: DatabaseConfig = DatabaseConfig()
+    smtp_server: SmtpServerConfig = SmtpServerConfig()
     celery_broker_url: HttpUrl | str | None = None
     frontend_url: HttpUrl | str | None = None
 
-    model_config = (# pyright: ignore[reportUnannotatedClassAttribute]
-        SettingsConfigDict(  
+    model_config = (  # pyright: ignore[reportUnannotatedClassAttribute]
+        SettingsConfigDict(
             yaml_file="config.yaml",
             yaml_file_encoding="utf-8",
             case_sensitive=False,

@@ -1,5 +1,7 @@
 from datetime import datetime
-from sqlmodel import Column, DateTime, Field, func  # pyright: ignore[reportUnknownVariableType]
+
+from sqlmodel import Column  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import DateTime, Field, func
 
 
 class TimestampMixin:

@@ -1,4 +1,5 @@
 from typing import Literal
+
 from pydantic import BaseModel
 
 from src.core.env import env
@@ -15,9 +16,7 @@ class BaseConfig(BaseModel):
 
 class DatabaseConfigMIXIN(BaseModel):
     def migrate_url(self):
-        return (
-            f"{env.database.driver}://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"
-        )
+        return f"{env.database.driver}://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"
 
     def session_url(self):
         return f"{env.database.driver}+psycopg://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"

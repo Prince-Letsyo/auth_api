@@ -2,8 +2,10 @@ import json
 import re
 from re import Pattern
 from typing import Any
+
 from loguru import logger
 from loguru._handler import Message
+
 from src.config import config
 
 
@@ -15,9 +17,7 @@ def app_logger():
         "logs/app.log",
         rotation="10 MB",
         retention="7 days",
-        level=(
-            "DEBUG" if config.env.env_mode in {"development", "test"} else "INFO"
-        ),
+        level=("DEBUG" if config.env.env_mode in {"development", "test"} else "INFO"),
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {extra} | {message}",
         enqueue=True,
         compression="zip",
@@ -38,13 +38,20 @@ def app_logger():
         with open("logs/json.log", "a") as f:
             _ = f.write(json.dumps(log_entry) + "\n")
 
-    logger.add(json_sink, format="{message}")  # pyright: ignore[reportCallIssue, reportArgumentType]
+    logger.add(
+        json_sink, format="{message}"
+    )  # pyright: ignore[reportCallIssue, reportArgumentType]
     return logger
 
 
 # Regex patterns
-PASSWORD_PATTERN: Pattern[str] = re.compile(r"\b([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd][_][Oo][Nn][Ee]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd][_][Tt][Ww][Oo])\b", re.IGNORECASE)
-TOKEN_PATTERN: Pattern[str] = re.compile(r"\b(token|api_key|secret|auth)\b", re.IGNORECASE)
+PASSWORD_PATTERN: Pattern[str] = re.compile(
+    r"\b([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd][_][Oo][Nn][Ee]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd][_][Tt][Ww][Oo])\b",
+    re.IGNORECASE,
+)
+TOKEN_PATTERN: Pattern[str] = re.compile(
+    r"\b(token|api_key|secret|auth)\b", re.IGNORECASE
+)
 
 
 def filter_sensitive(data: dict[str, str | int] | str):

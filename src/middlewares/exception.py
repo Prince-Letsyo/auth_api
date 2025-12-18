@@ -1,7 +1,9 @@
 from typing import Any
-from fastapi import Request, HTTPException, status
+
+from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
 from src.core.exception import AppException
 
 
@@ -44,6 +46,6 @@ async def global_exception_handler(_request: Request, _exc: Exception) -> JSONRe
         status_code=500,
         content={
             "success": False,
-            "error": "Internal server error. Please contact support."
+            "error": "Internal server error. Please contact support.",
         },
     )

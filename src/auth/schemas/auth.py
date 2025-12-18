@@ -1,13 +1,15 @@
 from typing import Any, cast
-from sqlmodel import (
-    SQLModel,
-    Field,  # pyright: ignore[reportUnknownVariableType]
-)
-from pydantic import ConfigDict, EmailStr, SecretStr, ValidationInfo, field_validator
-from pydantic import BaseModel
-from src.auth.schemas.token import ActivateAccountToken, Temp2TAToken, TokenModel
-from src.schemas.user_schemas import UserBase
+
+from pydantic import (BaseModel, ConfigDict, EmailStr, SecretStr,
+                      ValidationInfo, field_validator)
+from sqlmodel import Field  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import SQLModel
+
+from src.auth.schemas.token import (ActivateAccountToken, Temp2TAToken,
+                                    TokenModel)
 from src.auth.util.password import password_validator
+from src.schemas.user_schemas import UserBase
+
 
 class ConfirmPasswordsMixin(SQLModel):
     password_one: SecretStr = Field(nullable=False, min_length=8)
@@ -35,8 +37,8 @@ class UserCreate(ConfirmPasswordsMixin, UserBase):
         email: EmailStr | None = values.get("email")
 
         if not all([username, email]):
-            validation_without_context: dict[str, Any] = (  # pyright: ignore[reportExplicitAny]
-                password_validator.validate_password(  
+            validation_without_context: dict[str, Any] = (
+                password_validator.validate_password(  # pyright: ignore[reportExplicitAny]
                     password=v.get_secret_value(), username="", email=""
                 )
             )
@@ -48,8 +50,8 @@ class UserCreate(ConfirmPasswordsMixin, UserBase):
                 )
             return v
 
-        validation_with_context: dict[str, Any] = ( # pyright: ignore[reportExplicitAny]
-            password_validator.validate_password(  
+        validation_with_context: dict[str, Any] = (
+            password_validator.validate_password(  # pyright: ignore[reportExplicitAny]
                 password=v.get_secret_value(),
                 username=cast(str, username),
                 email=cast(str, email),
@@ -78,7 +80,6 @@ class AuthLogin(SQLModel):
     model_config: ConfigDict = (  # pyright: ignore[reportIncompatibleVariableOverride]
         ConfigDict(from_attributes=True)
     )
-
 
 
 class UserResponse(BaseModel):

@@ -1,7 +1,8 @@
-from typing import Any
-from pwdlib import PasswordHash
-from zxcvbn import  zxcvbn
 import re
+from typing import Any
+
+from pwdlib import PasswordHash
+from zxcvbn import zxcvbn
 
 
 class PasswordValidator:
@@ -44,8 +45,12 @@ class PasswordValidator:
         self, password: str, username: str, email: str
     ) -> tuple[bool, str]:
         """Check if password is too similar to username or email"""
-        similarity_username: float = self.calculate_similarity(password, other_field=username)
-        similarity_email: float = self.calculate_similarity(password, other_field=email.split(sep="@")[0])
+        similarity_username: float = self.calculate_similarity(
+            password, other_field=username
+        )
+        similarity_email: float = self.calculate_similarity(
+            password, other_field=email.split(sep="@")[0]
+        )
 
         if similarity_username > self.max_similarity:
             return (
@@ -61,7 +66,7 @@ class PasswordValidator:
 
     def validate_password(
         self, password: str, username: str, email: str
-    ) -> dict[str,Any]:  # pyright: ignore[reportExplicitAny]
+    ) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         """Complete Django-like password validation"""
         errors: list[str] = []
 

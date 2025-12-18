@@ -1,16 +1,18 @@
 import json
 import uuid
+from collections.abc import Awaitable
+from typing import Any, Callable, cast
+
 from fastapi import Request, status
 from fastapi.responses import JSONResponse, Response
 from jose.exceptions import ExpiredSignatureError, JWTError
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import iterate_in_threadpool
+
 from src.auth.schemas.token import TokenError
-from src.core.exception import UnauthorizedException
 from src.auth.util.token import JWTPayloadWithExp, jwt_auth_token
-from src.utils.logging import main_logger, filter_sensitive
-from typing import Any, Callable, cast
-from collections.abc import Awaitable
+from src.core.exception import UnauthorizedException
+from src.utils.logging import filter_sensitive, main_logger
 
 
 async def jwt_decoder(

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, HttpUrl
+
 from src.config.base import DatabaseConfigMIXIN
 from src.core.env import env
 

@@ -1,14 +1,13 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
-
+from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
-from src.schemas import *
-from src.entities.user_entity import UserModel, ProfileModel  # pyright: ignore[reportUnusedImport]
-from src.config import config as app_config
 
+from alembic import context
+from src.config import config as app_config
+from src.entities.user_entity import (  # pyright: ignore[reportUnusedImport]
+    ProfileModel, UserModel)
+from src.schemas import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

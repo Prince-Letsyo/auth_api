@@ -1,8 +1,10 @@
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import Any, cast
+
 from jose import jwt
+
 from src.auth.schemas.token import JWTPayload, JWTPayloadWithExp
 from src.config import config
-from typing import Any, cast
 
 SECRET_KEY: str = config.env.token.secret_key
 ALGORITHM: str = config.env.token.algorithm
@@ -84,7 +86,7 @@ class JWTAuthToken:
             expires_delta=timedelta(weeks=float(REFRESH_TOKEN_EXPIRE_WEEKS)),
         )
 
-    def decode_token(self, token: str) -> dict[str, str|bool]:
+    def decode_token(self, token: str) -> dict[str, str | bool]:
         """Decodes all types of tokens
 
         Args:

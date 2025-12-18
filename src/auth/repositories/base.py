@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+
 from pydantic import EmailStr
 
+from src.auth.schemas.auth import UserCreate
 from src.entities.user_entity import UserModel
-from src.auth.schemas.auth import  UserCreate
 
 
 class BaseAuthRepository(ABC):
@@ -31,15 +32,11 @@ class BaseAuthRepository(ABC):
         self, email: EmailStr, new_password: str
     ) -> UserModel:
         pass
-    
+
     @abstractmethod
-    async def enable_2fa(
-        self, username: str, totp_secret: str
-    ) -> UserModel:
+    async def enable_2fa(self, username: str, totp_secret: str) -> UserModel:
         pass
-    
+
     @abstractmethod
-    async def disable_2fa(
-        self, username: str
-    ) -> UserModel:
+    async def disable_2fa(self, username: str) -> UserModel:
         pass

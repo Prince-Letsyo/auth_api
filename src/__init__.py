@@ -1,27 +1,23 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
+
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from typing import Any
 
 from src.api import register_api_routes
 from src.config import config
 from src.core.db import init_db
-from src.core.redis import init_redis
-from src.utils.logging import main_logger
 from src.core.exception import AppException
-from src.middlewares.exception import (
-    app_exception_handler,
-    global_exception_handler,
-    http_exception_handler,
-    validation_exception_handler,
-)
-from src.middlewares.request import (
-    jwt_decoder,
-    logging_middleware,
-)
+from src.core.redis import init_redis
+from src.middlewares.exception import (app_exception_handler,
+                                       global_exception_handler,
+                                       http_exception_handler,
+                                       validation_exception_handler)
+from src.middlewares.request import jwt_decoder, logging_middleware
+from src.utils.logging import main_logger
 
 
 @asynccontextmanager
@@ -114,10 +110,7 @@ _ = app.middleware(middleware_type="http")(logging_middleware)
 
 register_api_routes(app)
 
+
 @app.get("/")
 def index():
     return {"message": "Welcome to Authentication Api Project!"}
-
-
-
-
