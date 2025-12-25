@@ -10,5 +10,5 @@ def is_valid_url(url: str) -> bool:
                 result.netloc,  # domain present
             ]
         )
-    except:
+    except Exception:
         return False
