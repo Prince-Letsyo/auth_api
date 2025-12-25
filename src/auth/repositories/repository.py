@@ -9,8 +9,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.repositories.base import BaseAuthRepository
 from src.auth.schemas.auth import UserCreate
 from src.auth.util.password import password_validator
-from src.core.exception import (AppException, ConflictException,
-                                NotFoundException)
+from src.core.exception import AppException, ConflictException, NotFoundException
 from src.entities.user_entity import UserModel
 
 
@@ -31,7 +30,7 @@ class AuthRepository(BaseAuthRepository):
             await self.db.commit()
             await self.db.refresh(instance=user)
             return user
-        except IntegrityError as e:
+        except IntegrityError:
             raise ConflictException(
                 message="User already exist",
             )
@@ -52,7 +51,7 @@ class AuthRepository(BaseAuthRepository):
             await self.db.commit()
             await self.db.refresh(instance=user)
             return user
-        except NoResultFound as e:
+        except NoResultFound:
             raise NotFoundException(
                 message=f"User with username '{username}' does not exist",
             )
@@ -82,9 +81,9 @@ class AuthRepository(BaseAuthRepository):
                 raise AppException(message="User account is not active")
             return user
 
-        except NoResultFound as e:
+        except NoResultFound:
             raise NotFoundException(
-                message=f"Incorrect username or password",
+                message="Incorrect username or password",
             )
         except Exception as e:
             raise e
@@ -97,9 +96,9 @@ class AuthRepository(BaseAuthRepository):
             )
             return result.one()
 
-        except NoResultFound as e:
+        except NoResultFound:
             raise NotFoundException(
-                message=f"Incorrect username or password",
+                message="Incorrect username or password",
             )
         except Exception as e:
             raise e
@@ -115,7 +114,7 @@ class AuthRepository(BaseAuthRepository):
             await self.db.commit()
             await self.db.refresh(instance=user)
             return user
-        except NoResultFound as e:
+        except NoResultFound:
             raise NotFoundException(
                 message=f"User with email '{email}' does not exist",
             )
