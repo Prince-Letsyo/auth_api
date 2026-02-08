@@ -2,8 +2,7 @@ import sys
 from typing import Literal, override
 
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
-from pydantic_settings import (BaseSettings, SettingsConfigDict,
-                               YamlConfigSettingsSource)
+from pydantic_settings import BaseSettings, SettingsConfigDict, YamlConfigSettingsSource
 from pydantic_settings.sources import PydanticBaseSettingsSource
 
 
@@ -42,9 +41,10 @@ class SmtpServerConfig(BaseModel):
     validate_certs: bool = Field(default=True)
     server: str = Field(default="127.0.0.1", min_length=1)
 
+
 class EnvConfig(BaseSettings):
     app: str = "src:app"
-    host: str = "127.0.01"
+    host: str = "127.0.0.1"
     reload: bool = True
     log_level: str = "info"
     env_mode: Literal["development", "production", "test"] = "development"

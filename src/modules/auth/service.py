@@ -4,18 +4,26 @@ import qrcode
 from jose import ExpiredSignatureError, JWTError
 from pydantic import EmailStr
 
-from src.auth.repositories.base import BaseAuthRepository
-from src.auth.schemas.auth import (ActivateUserAccountResponse,
-                                   PasswordResetRequest, UserCreate,
-                                   UserResponse)
-from src.auth.schemas.token import (AccessToken, ActivateAccountToken,
-                                    JWTPayload, RefreshToken, Temp2TAToken,
-                                    TokenModel)
-from src.auth.util.mfa import generate_totp_secret, get_totp_uri, verify_totp
-from src.auth.util.password import password_validator
-from src.auth.util.token import jwt_auth_token
-from src.core.exception import AppException, UnauthorizedException
-from src.entities.user_entity import UserModel
+from src.modules.auth.repositories.base import BaseAuthRepository
+from src.modules.auth.schemas.auth import (
+    ActivateUserAccountResponse,
+    PasswordResetRequest,
+    UserCreate,
+    UserResponse,
+)
+from src.modules.auth.schemas.token import (
+    AccessToken,
+    ActivateAccountToken,
+    JWTPayload,
+    RefreshToken,
+    Temp2TAToken,
+    TokenModel,
+)
+from src.modules.auth.util.mfa import generate_totp_secret, get_totp_uri, verify_totp
+from src.modules.auth.util.password import password_validator
+from src.modules.auth.util.token import jwt_auth_token
+from src.core.exceptions import AppException, UnauthorizedException
+from src.modules.auth.models import UserModel
 
 
 class AuthController:
@@ -188,7 +196,7 @@ class AuthController:
         import io
 
         buffer = io.BytesIO()
-        qr.save(buffer, kind="png")
+        _ = qr.save(buffer, format="PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
         return {

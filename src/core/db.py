@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.config import config
-from src.utils.alembic_utils import upgrade_database
+from src.shared.utils.alembic_utils import upgrade_database
 
 # Create async engine
 engine: AsyncEngine = create_async_engine(url=config.database.session_url(), echo=False)

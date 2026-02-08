@@ -10,7 +10,7 @@ celery_app = Celery(
     broker=broker_url,
     backend=env.redis.url or "redis://localhost",
     include=[
-        "src.tasks.email_task",
+        "src.tasks.email",
     ],
 )
 
@@ -48,7 +48,7 @@ celery_app.conf.update(  # pyright: ignore[reportUnknownMemberType]
         },
     },
     task_routes={
-        "src.tasks.email_task.send_*": {"queue": "auth_app.priority.high"},
+        "src.tasks.email.send_*": {"queue": "auth_app.priority.high"},
     },
     task_acks_on_failure_or_timeout=False,
     worker_pool="solo",

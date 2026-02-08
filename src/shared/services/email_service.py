@@ -6,11 +6,12 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import DirectoryPath, NameEmail, SecretStr
 
 from src.config import config
-from src.utils.logging import main_logger
+from src.core.logging import main_logger
 
 
 class EmailServiceTransientError(Exception):
     """Exception indicating a temporary, retryable failure in email sending (e.g., network error)."""
+
     pass
 
 
@@ -24,7 +25,7 @@ class EmailService:
             MAIL_SERVER=config.env.smtp_server.server,
             MAIL_STARTTLS=config.env.smtp_server.use_tls,
             MAIL_SSL_TLS=config.env.smtp_server.use_ssl,
-            TEMPLATE_FOLDER=Path(__file__).resolve().parents[1] / "templates",
+            TEMPLATE_FOLDER=Path(__file__).resolve().parents[2] / "templates",
             LOCAL_HOSTNAME=config.env.smtp_server.hostname,
             VALIDATE_CERTS=config.env.smtp_server.validate_certs,
             USE_CREDENTIALS=config.env.smtp_server.credentials,

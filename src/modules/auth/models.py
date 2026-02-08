@@ -3,8 +3,8 @@ from typing import cast
 from sqlmodel import Boolean  # pyright: ignore[reportUnknownVariableType]
 from sqlmodel import Field, Relationship, SQLModel, String
 
-from src.entities.base import TimestampMixin
-from src.schemas.user_schemas import UserBase
+from src.core.base import TimestampMixin
+from src.core.user_schemas import UserBase
 
 
 class UserModel(TimestampMixin, UserBase, table=True):

@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 
 from src.core.env import EnvConfig, env
+from . import dev, prod, test
+
 
 from .base import BaseConfig
 from .dev import DevConfig
@@ -8,8 +10,12 @@ from .prod import ProdConfig
 from .test import TestConfig
 
 type CONFIG_TYPE = DevConfig | ProdConfig | TestConfig
-type DATABASE_CONFIG_TYPE = dev.DatabaseConfig | prod.DatabaseConfig | test.DatabaseConfig
-type FEATURES_CONFIG_TYPE = dev.FeaturesConfig | prod.FeaturesConfig | test.FeaturesConfig
+type DATABASE_CONFIG_TYPE = (
+    dev.DatabaseConfig | prod.DatabaseConfig | test.DatabaseConfig
+)
+type FEATURES_CONFIG_TYPE = (
+    dev.FeaturesConfig | prod.FeaturesConfig | test.FeaturesConfig
+)
 type REDIS_CONFIG_TYPE = dev.RedisConfig | prod.RedisConfig | test.RedisConfig
 
 

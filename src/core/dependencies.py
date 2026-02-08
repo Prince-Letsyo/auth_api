@@ -3,9 +3,9 @@ from typing import ClassVar, Self
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.auth.controller import AuthController
-from src.auth.repositories.base import BaseAuthRepository
-from src.auth.repositories.repository import AuthRepository
+from src.modules.auth.service import AuthController
+from src.modules.auth.repositories.base import BaseAuthRepository
+from src.modules.auth.repositories.repository import AuthRepository
 from src.core.db import get_db_session
 
 
@@ -34,9 +34,7 @@ dependency_container: DependencyContainer = DependencyContainer()
 
 
 async def get_auth_controller(
-    session: AsyncSession = Depends(
-        dependency=get_db_session
-    ),  # pyright: ignore[reportCallInDefaultInitializer]
+    session: AsyncSession = Depends(dependency=get_db_session),  # pyright: ignore[reportCallInDefaultInitializer]
 ) -> AuthController:
     await dependency_container.initialize(db=session)
     if dependency_container.auth_controller is None:

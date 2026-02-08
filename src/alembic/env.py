@@ -5,9 +5,10 @@ from sqlmodel import SQLModel
 
 from alembic import context
 from src.config import config as app_config
-from src.entities.user_entity import (  # pyright: ignore[reportUnusedImport]
-    ProfileModel, UserModel)
-from src.schemas import *
+from src.modules.auth.models import (  # pyright: ignore[reportUnusedImport]
+    ProfileModel,
+    UserModel,
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -3,7 +3,7 @@ from typing import Any, cast
 
 from jose import jwt
 
-from src.auth.schemas.token import JWTPayload, JWTPayloadWithExp
+from src.modules.auth.schemas.token import JWTPayload, JWTPayloadWithExp
 from src.config import config
 
 SECRET_KEY: str = config.env.token.secret_key

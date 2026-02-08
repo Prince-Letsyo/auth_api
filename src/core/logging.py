@@ -24,23 +24,15 @@ def app_logger():
     )
 
     # Add JSON sink for structured logging
-    def json_sink(message: Message) -> None:
-        record = message.record
-        log_entry: dict[str, Any] = {  # pyright: ignore[reportExplicitAny]
-            "time": record["time"].strftime("%Y-%m-%d %H:%M:%S"),
-            "level": record["level"].name,
-            "module": record["name"],
-            "function": record["function"],
-            "line": record["line"],
-            "message": record["message"],
-            "extra": record["extra"],
-        }
-        with open("logs/json.log", "a") as f:
-            _ = f.write(json.dumps(log_entry) + "\n")
-
-    logger.add(
-        json_sink, format="{message}"
-    )  # pyright: ignore[reportCallIssue, reportArgumentType]
+    _ = logger.add(
+        "logs/json.log",
+        rotation="10 MB",
+        retention="7 days",
+        level=("DEBUG" if config.env.env_mode in {"development", "test"} else "INFO"),
+        serialize=True,
+        enqueue=True,
+        compression="zip",
+    )
     return logger
 
 

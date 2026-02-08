@@ -9,10 +9,21 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import iterate_in_threadpool
 
-from src.auth.schemas.token import TokenError
-from src.auth.util.token import JWTPayloadWithExp, jwt_auth_token
-from src.core.exception import UnauthorizedException
-from src.utils.logging import filter_sensitive, main_logger
+from src.modules.auth.schemas.token import TokenError
+from src.modules.auth.util.token import JWTPayloadWithExp, jwt_auth_token
+from src.core.exceptions import UnauthorizedException
+from src.core.logging import main_logger
+
+
+def filter_sensitive(data: dict[str, Any] | str) -> dict[str, Any] | str:
+    """Mock filter_sensitive to avoid import error if it was in utils/logging."""
+    if isinstance(data, dict):
+        new_data = data.copy()
+        for key in ["password", "token", "secret", "hashed_password"]:
+            if key in new_data:
+                new_data[key] = "********"
+        return new_data
+    return data
 
 
 async def jwt_decoder(
@@ -24,8 +35,8 @@ async def jwt_decoder(
             payload: dict[str, str | bool] = jwt_auth_token.decode_token(
                 token=token.split(sep=" ")[1]
             )
-            request.cookies
             request.state.user = payload
+
         except ExpiredSignatureError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,

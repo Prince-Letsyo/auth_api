@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from pydantic import EmailStr
 
-from src.auth.schemas.auth import UserCreate
-from src.entities.user_entity import UserModel
+from src.modules.auth.schemas.auth import UserCreate
+from src.modules.auth.models import UserModel
 
 
 class BaseAuthRepository(ABC):

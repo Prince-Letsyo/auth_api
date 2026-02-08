@@ -1,14 +1,12 @@
 from typing import cast
 
 from asgiref.sync import async_to_sync
-from celery import \
-    shared_task  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
+from celery import shared_task  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
 from pydantic import NameEmail
 
 from src.core.celery_app import celery_app
-from src.services.email_service import (EmailServiceTransientError,
-                                        email_service)
-from src.utils.logging import main_logger
+from src.shared.services.email_service import EmailServiceTransientError, email_service
+from src.core.logging import main_logger
 
 
 @shared_task
@@ -20,13 +18,14 @@ def log_task_success(result: dict[str, str]):
 
 @shared_task(bind=True)  # pyright: ignore[reportAny]
 def log_task_failure(
-    self, task_id # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
-):  
+    self,
+    task_id,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+):
     """
     Logs the failure of any task that links to it using link_error.
     The task ID, exception, and traceback are automatically passed by Celery.
     """
-    main_logger.error(f"❌ Celery Task Failure Handler Triggered")
+    main_logger.error("❌ Celery Task Failure Handler Triggered")
     main_logger.error(f"   Task ID: {task_id}")
 
 
@@ -119,12 +118,12 @@ def send_activate_email(
         return {"type": "activation", "email": activate_user_response.get("email")}
     except EmailServiceTransientError:
         main_logger.error(
-            f"Email service reported a transient error for {cast(str, activate_user_response.get("email", ""))}. Auto-retrying..."
+            f"Email service reported a transient error for {cast(str, activate_user_response.get('email', ''))}. Auto-retrying..."
         )
         raise
 
     except Exception as exc:
         main_logger.error(
-            f"FATAL NON-RETRYABLE ERROR sending email to {cast(str, activate_user_response.get("email", ""))}: {exc}"
+            f"FATAL NON-RETRYABLE ERROR sending email to {cast(str, activate_user_response.get('email', ''))}: {exc}"
         )
         raise

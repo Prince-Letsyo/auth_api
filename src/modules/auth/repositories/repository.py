@@ -6,11 +6,11 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.auth.repositories.base import BaseAuthRepository
-from src.auth.schemas.auth import UserCreate
-from src.auth.util.password import password_validator
-from src.core.exception import AppException, ConflictException, NotFoundException
-from src.entities.user_entity import UserModel
+from src.modules.auth.repositories.base import BaseAuthRepository
+from src.modules.auth.schemas.auth import UserCreate
+from src.modules.auth.util.password import password_validator
+from src.core.exceptions import AppException, ConflictException, NotFoundException
+from src.modules.auth.models import UserModel
 
 
 class AuthRepository(BaseAuthRepository):

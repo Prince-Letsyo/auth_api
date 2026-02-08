@@ -1,14 +1,23 @@
 from typing import Any, cast
 
-from pydantic import (BaseModel, ConfigDict, EmailStr, SecretStr,
-                      ValidationInfo, field_validator)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    SecretStr,
+    ValidationInfo,
+    field_validator,
+)
 from sqlmodel import Field  # pyright: ignore[reportUnknownVariableType]
 from sqlmodel import SQLModel
 
-from src.auth.schemas.token import (ActivateAccountToken, Temp2TAToken,
-                                    TokenModel)
-from src.auth.util.password import password_validator
-from src.schemas.user_schemas import UserBase
+from src.modules.auth.schemas.token import (
+    ActivateAccountToken,
+    Temp2TAToken,
+    TokenModel,
+)
+from src.modules.auth.util.password import password_validator
+from src.core.user_schemas import UserBase
 
 
 class ConfirmPasswordsMixin(SQLModel):
@@ -44,18 +53,14 @@ class UserCreate(ConfirmPasswordsMixin, UserBase):
             )
             if not validation_without_context["is_valid"]:
                 raise ValueError(
-                    validation_without_context["errors"][
-                        0
-                    ]  # pyright: ignore[reportAny]
+                    validation_without_context["errors"][0]  # pyright: ignore[reportAny]
                 )
             return v
 
-        validation_with_context: dict[str, Any] = (
-            password_validator.validate_password(  # pyright: ignore[reportExplicitAny]
-                password=v.get_secret_value(),
-                username=cast(str, username),
-                email=cast(str, email),
-            )
+        validation_with_context: dict[str, Any] = password_validator.validate_password(  # pyright: ignore[reportExplicitAny]
+            password=v.get_secret_value(),
+            username=cast(str, username),
+            email=cast(str, email),
         )
         if not validation_with_context["is_valid"]:
             raise ValueError(

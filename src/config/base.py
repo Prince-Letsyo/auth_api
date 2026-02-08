@@ -19,4 +19,4 @@ class DatabaseConfigMIXIN(BaseModel):
         return f"{env.database.driver}://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"
 
     def session_url(self):
-        return f"{env.database.driver}+psycopg://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"
+        return f"{env.database.driver}+asyncpg://{env.database.user}:{env.database.pwd}@{env.database.host}/{env.database.name}"
