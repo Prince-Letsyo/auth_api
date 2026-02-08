@@ -1,31 +1,31 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
-from src.modules.auth.service import AuthController
+from src.modules.auth.service import AuthService
 from src.core.exceptions import UnauthorizedException, AppException
 from src.modules.auth.util.token import jwt_auth_token
 from src.modules.auth.models import UserModel
 
 
 @pytest.fixture
-def auth_controller():
+def auth_service():
     repository = MagicMock()
-    return AuthController(repository)
+    return AuthService(repository)
 
 
 @pytest.mark.anyio
-async def test_activate_account_missing_username(auth_controller, monkeypatch):
+async def test_activate_account_missing_username(auth_service, monkeypatch):
     # Mock decode_token to return payload without username
     monkeypatch.setattr(
         jwt_auth_token, "decode_token", lambda token: {"token_type": "activate"}
     )
 
     with pytest.raises(UnauthorizedException) as exc:
-        await auth_controller.activate_account("fake_token")
+        await auth_service.activate_account("fake_token")
     assert "missing username" in str(exc.value.message)
 
 
 @pytest.mark.anyio
-async def test_log_in_2fa_missing_username(auth_controller, monkeypatch):
+async def test_log_in_2fa_missing_username(auth_service, monkeypatch):
     monkeypatch.setattr(
         jwt_auth_token,
         "decode_token",
@@ -33,12 +33,12 @@ async def test_log_in_2fa_missing_username(auth_controller, monkeypatch):
     )
 
     with pytest.raises(UnauthorizedException) as exc:
-        await auth_controller.log_in_2fa("fake_token", "123456")
+        await auth_service.log_in_2fa("fake_token", "123456")
     assert "missing username" in str(exc.value.message)
 
 
 @pytest.mark.anyio
-async def test_log_in_2fa_missing_totp_secret(auth_controller, monkeypatch):
+async def test_log_in_2fa_missing_totp_secret(auth_service, monkeypatch):
     monkeypatch.setattr(
         jwt_auth_token,
         "decode_token",
@@ -50,15 +50,15 @@ async def test_log_in_2fa_missing_totp_secret(auth_controller, monkeypatch):
     )
 
     user = UserModel(username="testuser", is_2fa_enabled=True, totp_secret=None)
-    auth_controller.repository.get_user_by_username = AsyncMock(return_value=user)
+    auth_service.repository.get_user_by_username = AsyncMock(return_value=user)
 
     with pytest.raises(AppException) as exc:
-        await auth_controller.log_in_2fa("fake_token", "123456")
+        await auth_service.log_in_2fa("fake_token", "123456")
     assert "2FA secret is missing" in str(exc.value.message)
 
 
 @pytest.mark.anyio
-async def test_get_access_token_missing_fields(auth_controller, monkeypatch):
+async def test_get_access_token_missing_fields(auth_service, monkeypatch):
     monkeypatch.setattr(
         jwt_auth_token,
         "decode_token",
@@ -66,17 +66,17 @@ async def test_get_access_token_missing_fields(auth_controller, monkeypatch):
     )
 
     with pytest.raises(UnauthorizedException) as exc:
-        await auth_controller.get_access_token("fake_token")
+        await auth_service.get_access_token("fake_token")
     assert "missing required fields" in str(exc.value.message)
 
 
 @pytest.mark.anyio
-async def test_password_reset_missing_user_info(auth_controller, monkeypatch):
+async def test_password_reset_missing_user_info(auth_service, monkeypatch):
     monkeypatch.setattr(
-        jwt_auth_token, "decode_token", lambda token: {"token_type": "activate"}
+        jwt_auth_token, "decode_token", lambda token: {"token_type": "password_reset"}
     )
     mock_reset_request = MagicMock()
 
     with pytest.raises(UnauthorizedException) as exc:
-        await auth_controller.password_reset("fake_token", mock_reset_request)
+        await auth_service.password_reset("fake_token", mock_reset_request)
     assert "missing user info" in str(exc.value.message)

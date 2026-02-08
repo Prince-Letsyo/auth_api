@@ -161,10 +161,10 @@ def password_reset_user(client, user_factory):
         email="reset_user@example.com",
         password="ResetCorrectHorseBatteryStaple1!",
     )
-    activation_token, _ = jwt_auth_token.activate_token(
+    password_reset_token, _ = jwt_auth_token.password_reset_token(
         {"username": user.username, "email": user.email, "user_id": user.id}
     )
-    return {"user": user, "activation_token": activation_token}
+    return {"user": user, "password_reset_token": password_reset_token}
 
 
 @pytest.fixture

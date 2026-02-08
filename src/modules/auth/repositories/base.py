@@ -20,6 +20,55 @@ class BaseAuthRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_user_by_username_any_status(self, username: str) -> UserModel:
+        pass
+
+    @abstractmethod
+    async def update_refresh_token_version(
+        self, username: str, new_version: int
+    ) -> UserModel:
+        pass
+
+    @abstractmethod
+    async def update_totp_secret(self, username: str, totp_secret: str) -> UserModel:
+        pass
+
+    @abstractmethod
+    async def create_session(
+        self,
+        session_id: str,
+        user_id: int,
+        refresh_token_hash: str,
+        user_agent: str | None,
+        ip_address: str | None,
+    ):
+        pass
+
+    @abstractmethod
+    async def get_session(self, session_id: str):
+        pass
+
+    @abstractmethod
+    async def update_session_token(self, session_id: str, refresh_token_hash: str):
+        pass
+
+    @abstractmethod
+    async def revoke_session(self, session_id: str) -> None:
+        pass
+
+    @abstractmethod
+    async def revoke_user_sessions(self, user_id: int) -> None:
+        pass
+
+    @abstractmethod
+    async def list_sessions(self, user_id: int):
+        pass
+
+    @abstractmethod
+    async def update_user_email(self, user_id: int, new_email: EmailStr) -> UserModel:
+        pass
+
+    @abstractmethod
     async def get_user_by_email(self, email: EmailStr) -> UserModel:
         pass
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, cast
 
 from pydantic import (
@@ -13,6 +14,7 @@ from sqlmodel import SQLModel
 
 from src.modules.auth.schemas.token import (
     ActivateAccountToken,
+    PasswordResetToken,
     Temp2TAToken,
     TokenModel,
 )
@@ -100,9 +102,37 @@ class ActivateUserAccountResponse(UserBase):
     token: ActivateAccountToken
 
 
+class PasswordResetResponse(UserBase):
+    token: PasswordResetToken
+
+
 class PasswordResetRequest(ConfirmPasswordsMixin):
     email: EmailStr = Field(index=True, nullable=False, unique=True)
+    token: str = Field(min_length=1)
 
 
 class Verify2FARequest(BaseModel):
+    token: str
     totp_token: str
+
+
+class TokenRequest(BaseModel):
+    token: str
+
+
+class LogoutRequest(BaseModel):
+    token: str
+
+
+class SessionResponse(BaseModel):
+    id: str
+    user_agent: str | None = None
+    ip_address: str | None = None
+    created_at: datetime | None = None
+    last_used_at: datetime | None = None
+    revoked_at: datetime | None = None
+
+
+class ChangeEmailRequest(BaseModel):
+    new_email: EmailStr
+    password: SecretStr

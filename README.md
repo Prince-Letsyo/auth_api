@@ -5,9 +5,9 @@
 [![SQLModel](https://img.shields.io/badge/SQLModel-0.0.14+-009688.svg)](https://sqlmodel.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A robust, asynchronous Authentication API built with **FastAPI**, **SQLModel**, and **PostgreSQL**. This project provides a complete user management system with secure authentication, Two-Factor Authentication (2FA), and email background tasks.
+A production‑ready authentication service built with FastAPI, SQLModel, and PostgreSQL. It supports account activation, password resets, MFA (TOTP), refresh token rotation, and per‑device sessions with session revocation.
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -18,96 +18,188 @@ graph TD
     Worker --> Email[Email Service]
 ```
 
-## 🚀 Features
+## Features
 
-*   **Secure Authentication**: JWT-based sign-up, sign-in, and token refresh.
-*   **Two-Factor Authentication (2FA)**: Support for TOTP using apps like Google Authenticator.
-*   **Account Activation**: Email-based verification for new accounts.
-*   **Password Management**: Argon2 hashing and secure reset flows.
-*   **Async Performance**: Fully asynchronous database and API operations.
-*   **Background Tasks**: Celery-powered email delivery.
-*   **Modern Tooling**: Managed with `uv` and `alembic` for migrations.
+- JWT sign‑up/sign‑in with refresh rotation
+- Per‑device sessions (refresh tokens are session‑bound)
+- MFA (TOTP) with encrypted secrets at rest
+- Account activation and password reset via email
+- Session revocation: single session or all sessions
+- Admin revoke sessions by user ID
+- Async DB + background email tasks
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-*   **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
-*   **Database**: PostgreSQL with [SQLModel](https://sqlmodel.tiangolo.com/)
-*   **Auth**: JWT (python-jose), Argon2 (passlib), TOTP (pyotp)
-*   **Task Queue**: Celery & Redis
-*   **Tooling**: [uv](https://github.com/astral-sh/uv), Alembic, Pytest
+- FastAPI
+- SQLModel + PostgreSQL
+- Redis + Celery
+- python‑jose (JWT), pwdlib (password hashing), pyotp (TOTP)
+- uv + Alembic + Pytest
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Python 3.13+
 - PostgreSQL
 - Redis
-- [uv](https://github.com/astral-sh/uv) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- uv
 
-## ⚙️ Setup & Installation
+## Quickstart
 
-1.  **Clone the Repository**
-    ```bash
-    git clone <repository-url>
-    cd auth_api
-    ```
+1. Install dependencies
 
-2.  **Initialize Environment**
-    ```bash
-    make venv
-    ```
+```bash
+make venv
+```
 
-3.  **Configure Environment Variables**
-    Copy `.env.example` to `.env` (if applicable) or create a `.env` file with:
-    ```env
-    SECRET_KEY=your-secure-secret
-    DB_URL=postgresql+asyncpg://user:password@localhost/auth_api_db
-    REDIS_URL=redis://localhost
-    CELERY_BROKER_URL=redis://localhost:6379/0
-    ```
+2. Configure settings
 
-4.  **Run Migrations**
-    ```bash
-    alembic upgrade head
-    ```
+This project uses `config.yaml` (or `config.dev.yaml` / `config.test.yaml`). Review and update:
 
-## 🏃‍♂️ Development
+- `token.secret_key` (JWT and refresh hash secret)
+- `totp_secret_key` (optional, for encrypting TOTP secrets; falls back to `token.secret_key`)
+- `database` and `redis` URLs
+- `smtp_server` settings
+- `api_key` for admin endpoints
 
-| Command | Description |
-|---------|-------------|
-| `make serve` | Start the API server (auto-reload) |
-| `make celery` | Start the Celery worker |
-| `make test` | Run the test suite |
-| `make lint` | Run quality checks (Flake8, Mypy) |
-| `make format` | Format code (Black, Isort) |
+3. Migrate database
 
-## 📁 Project Structure
+```bash
+uv run alembic upgrade head
+```
+
+4. Run the API
+
+```bash
+make serve
+```
+
+## API Overview
+
+All endpoints are under `/api`.
+
+### Auth
+
+- `POST /api/auth/sign-up`
+- `POST /api/auth/sign-in`
+- `POST /api/auth/sign-in-mfa`
+- `POST /api/auth/activate-account`
+- `POST /api/auth/request-password-reset`
+- `POST /api/auth/reset-password`
+- `POST /api/auth/access` (refresh rotation)
+- `POST /api/auth/enable-2fa`
+- `POST /api/auth/disable-2fa`
+- `POST /api/auth/logout`
+- `POST /api/auth/logout-all`
+- `GET /api/auth/sessions`
+- `POST /api/auth/change-email`
+- `POST /api/auth/admin/revoke-sessions/{user_id}` (admin only)
+
+### Example: Sign In
+
+```bash
+curl -X POST http://localhost:3000/api/auth/sign-in \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","password":"CorrectHorseBatteryStaple1!"}'
+```
+
+### Example: MFA Sign In
+
+```bash
+curl -X POST http://localhost:3000/api/auth/sign-in-mfa \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<temp_2fa_token>","totp_token":"123456"}'
+```
+
+### Example: Refresh Rotation
+
+```bash
+curl -X POST http://localhost:3000/api/auth/access \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<refresh_token>"}'
+```
+
+Response:
+
+```json
+{
+  "access_token": {"token": "<access>", "duration": "2026-02-08T16:00:00Z"},
+  "refresh_token": {"token": "<refresh>", "duration": "2026-03-08T16:00:00Z"}
+}
+```
+
+### Example: Logout (single session)
+
+```bash
+curl -X POST http://localhost:3000/api/auth/logout \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<refresh_token>"}'
+```
+
+### Example: Logout All
+
+```bash
+curl -X POST http://localhost:3000/api/auth/logout-all \
+  -H 'Authorization: Bearer <access_token>'
+```
+
+### Example: List Sessions
+
+```bash
+curl -X GET http://localhost:3000/api/auth/sessions \
+  -H 'Authorization: Bearer <access_token>'
+```
+
+### Example: Change Email
+
+```bash
+curl -X POST http://localhost:3000/api/auth/change-email \
+  -H 'Authorization: Bearer <access_token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"new_email":"alice2@example.com","password":"CorrectHorseBatteryStaple1!"}'
+```
+
+### Example: Admin Revoke Sessions
+
+```bash
+curl -X POST http://localhost:3000/api/auth/admin/revoke-sessions/123 \
+  -H 'X-API-Key: <admin_api_key>'
+```
+
+## Session Model
+
+Refresh tokens are tied to a server‑side session record. On refresh:
+
+- The refresh token must match the stored hash for the session
+- A new refresh token is issued with a new `jti`
+- The session hash is updated
+
+Revocations set `revoked_at` and invalidate refresh and access tokens for that session.
+
+## Security Notes
+
+- Set `token.secret_key` and `totp_secret_key` to strong values.
+- Admin endpoints require `X-API-Key` set to `config.env.api_key`.
+- TOTP secrets are encrypted before storing in DB.
+
+## Testing
+
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run pytest
+```
+
+## Project Layout
 
 ```text
 src/
-├── core/           # Security, dependencies, celery setup
+├── core/           # Dependencies, middleware, celery setup
 ├── config/         # App configuration management
-├── modules/        # Domain-driven modules
-│   └── auth/       # Authentication domain (models, routers, services)
-├── tasks/          # Celery background tasks
-├── templates/      # Jinja2 email templates
-└── shared/         # Common utilities and base classes
+├── modules/        # Domain modules
+│   └── auth/       # Auth domain (models, routers, services)
+├── tasks/          # Celery tasks
+├── templates/      # Email templates
+└── shared/         # Common utilities
 ```
 
-## 🔌 API Overview
+## License
 
-### Auth Endpoints
-- `POST /api/auth/sign-up`: Register new user
-- `POST /api/auth/sign-in`: Login (non-MFA)
-- `POST /api/auth/sign-in-mfa`: Login with 2FA
-- `POST /api/auth/enable-2fa`: Setup TOTP
-- `POST /api/auth/activate-account`: Email verification
-
-Access the interactive documentation at `/docs` (Swagger) or `/redoc`.
-
-## 🧪 Testing
-
-Tests are located in the `tests/` directory and can be run using:
-```bash
-make test
-```
-
+MIT

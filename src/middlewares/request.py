@@ -2,11 +2,16 @@ import uuid
 from collections.abc import Awaitable
 from typing import Any, Callable, cast
 
-from fastapi import Request, status
+from fastapi import Depends, Request, status
 from fastapi.responses import JSONResponse, Response
 from jose.exceptions import ExpiredSignatureError, JWTError
+from sqlmodel import select
 from sqlalchemy.exc import SQLAlchemyError
 
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from src.core.db import get_db_session
+from src.modules.auth.models import SessionModel, UserModel
 from src.modules.auth.schemas.token import TokenError
 from src.modules.auth.util.token import JWTPayloadWithExp, jwt_auth_token
 from src.core.exceptions import UnauthorizedException
@@ -25,9 +30,11 @@ def redact_headers(headers: dict[str, str]) -> dict[str, str]:
     return redacted
 
 
-def filter_sensitive(data: dict[str, Any] | str) -> dict[str, Any] | str:
+def filter_sensitive(data: dict[str, Any] | list[Any] | str) -> dict[str, Any] | list[Any] | str:
     if isinstance(data, dict):
-        return log_filter_sensitive(data.copy())
+        return log_filter_sensitive(data)
+    if isinstance(data, list):
+        return log_filter_sensitive(data)
     return data
 
 
@@ -72,13 +79,13 @@ async def logging_middleware(
 
     with main_logger.contextualize(req_id=request.state.req_id, ip=client_host):
         try:
-            body: dict[str, str | int] = (
+            body: Any = (
                 await request.json()
                 if request.headers.get("content-type") == "application/json"
                 else {}
             )
             # Redact body before logging
-            redacted_body: dict[str, str | int] | str = filter_sensitive(body.copy())
+            redacted_body = filter_sensitive(body)
             main_logger.bind(
                 method=request.method,
                 path=request.url.path,
@@ -104,8 +111,32 @@ async def logging_middleware(
             raise
 
 
-async def get_current_user(request: Request):
+async def get_current_user(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),  # pyright: ignore[reportCallInDefaultInitializer]
+):
     user = getattr(request.state, "user", None)
     if user is None:  # pyright: ignore[reportAny]
+        raise UnauthorizedException(message="Unauthorized")
+    session_id = user.get("sid")
+    user_id = user.get("user_id")
+    if not session_id or not user_id:
+        raise UnauthorizedException(message="Unauthorized")
+
+    try:
+        result = await session.exec(
+            select(SessionModel).where(SessionModel.id == session_id)
+        )
+        session_row = result.one()
+        if session_row.revoked_at is not None:
+            raise UnauthorizedException(message="Unauthorized")
+        if session_row.user_id != int(user_id):
+            raise UnauthorizedException(message="Unauthorized")
+
+        result = await session.exec(select(UserModel).where(UserModel.id == int(user_id)))
+        user_row = result.one()
+        if not user_row.is_active:
+            raise UnauthorizedException(message="Unauthorized")
+    except Exception:
         raise UnauthorizedException(message="Unauthorized")
     return cast(JWTPayloadWithExp, user)

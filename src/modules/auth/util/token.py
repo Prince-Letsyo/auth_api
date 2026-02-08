@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import hmac
 from typing import Any, cast
 
 from jose import jwt
@@ -60,6 +62,16 @@ class JWTAuthToken:
             tuple[str, datetime]: token string and expiration datetime
         """
         return self.__create_token(data, token_type="activate")
+
+    def password_reset_token(self, data: JWTPayload) -> tuple[str, datetime]:
+        """Create password reset JWT token that should last for about 15 minutes
+
+        Args:
+            data (JWTPayload): payload
+        Returns:
+            tuple[str, datetime]: token string and expiration datetime
+        """
+        return self.__create_token(data, token_type="password_reset")
 
     def access_token(self, data: JWTPayload) -> tuple[str, datetime]:
         """Create access JWT access token that should last for about a 30 minutes
@@ -137,3 +149,7 @@ class JWTAuthToken:
 
 
 jwt_auth_token: JWTAuthToken = JWTAuthToken()
+
+
+def hash_token(token: str) -> str:
+    return hmac.new(SECRET_KEY.encode("utf-8"), token.encode("utf-8"), hashlib.sha256).hexdigest()

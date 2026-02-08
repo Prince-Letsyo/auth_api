@@ -42,17 +42,31 @@ PASSWORD_PATTERN: Pattern[str] = re.compile(
     re.IGNORECASE,
 )
 TOKEN_PATTERN: Pattern[str] = re.compile(
-    r"\b(token|api_key|secret|auth)\b", re.IGNORECASE
+    r"\b(token|api_key|secret|auth|otp|code|pin|verification)\b", re.IGNORECASE
 )
 
 
-def filter_sensitive(data: dict[str, str | int] | str):
+def _redact_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return filter_sensitive(value)
+    if isinstance(value, list):
+        return [_redact_value(item) for item in value]
+    return value
+
+
+def filter_sensitive(data: dict[str, Any] | list[Any] | str) -> dict[str, Any] | list[Any] | str:
     if isinstance(data, dict):
-        for key in data:
+        redacted: dict[str, Any] = {}
+        for key, value in data.items():
             if PASSWORD_PATTERN.search(key):
-                data[key] = "***"
+                redacted[key] = "***"
             elif TOKEN_PATTERN.search(key):
-                data[key] = "[REDACTED]"
+                redacted[key] = "[REDACTED]"
+            else:
+                redacted[key] = _redact_value(value)
+        return redacted
+    if isinstance(data, list):
+        return [_redact_value(item) for item in data]
     return data
 
 

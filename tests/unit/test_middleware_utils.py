@@ -2,6 +2,7 @@ from typing import cast
 import pytest
 from fastapi import Request
 from src.middlewares.request import redact_headers, filter_sensitive, get_current_user
+from src.modules.auth.models import SessionModel, UserModel
 from src.core.exceptions import UnauthorizedException
 
 
@@ -36,7 +37,7 @@ def test_filter_sensitive_str():
 
 @pytest.mark.anyio
 async def test_get_current_user_success():
-    payload = {"sub": "user_id", "username": "user", "exp": 123}
+    payload = {"sub": "user_id", "username": "user", "exp": 123, "sid": "s1", "user_id": 1}
 
     class MockState:
         user = payload
@@ -44,7 +45,32 @@ async def test_get_current_user_success():
     class MockRequest:
         state = MockState()
 
-    user = await get_current_user(cast(Request, MockRequest()))
+    class _Result:
+        def __init__(self, value):
+            self._value = value
+
+        def one(self):
+            return self._value
+
+    class _FakeSession:
+        def __init__(self):
+            self._calls = 0
+
+        async def exec(self, _stmt):
+            self._calls += 1
+            if self._calls == 1:
+                return _Result(SessionModel(id="s1", user_id=1, refresh_token_hash="x"))
+            return _Result(
+                UserModel(
+                    id=1,
+                    username="user",
+                    email="user@example.com",
+                    hashed_password="x",
+                    is_active=True,
+                )
+            )
+
+    user = await get_current_user(cast(Request, MockRequest()), session=_FakeSession())
     assert user == payload
 
 

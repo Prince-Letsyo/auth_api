@@ -53,6 +53,7 @@ class EnvConfig(BaseSettings):
     version: str = "1.0.0"
     redis: RedisConfig = RedisConfig()
     token: TokenConfig = TokenConfig()
+    totp_secret_key: str | None = None
     database: DatabaseConfig = DatabaseConfig()
     smtp_server: SmtpServerConfig = SmtpServerConfig()
     celery_broker_url: HttpUrl | str | None = None

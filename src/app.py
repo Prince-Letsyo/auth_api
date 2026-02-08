@@ -1,17 +1,16 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
 
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.utils import get_openapi
 
 from src.api import register_api_routes
 from src.config import config
 from src.core.db import init_db
 from src.core.exceptions import AppException
 from src.core.redis import init_redis
+from src.core.openapi import custom_openapi
 from src.middlewares.exception import (
     app_exception_handler,
     global_exception_handler,
@@ -49,37 +48,7 @@ app = FastAPI(
 )
 
 
-def custom_openapi() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
-    if app.openapi_schema:
-        return app.openapi_schema
-
-    openapi_schema: dict[str, Any] = get_openapi(  # pyright: ignore[reportExplicitAny]
-        title=config.app_name,
-        version=config.env.version,
-        description="A simple Authentication API built with FastAPI",
-        contact={"name": "Prince Kumar", "email": "test@gm.com"},
-        routes=app.routes,
-    )
-
-    # Add JWT Bearer auth definition
-    openapi_schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT",
-            "description": "Enter your JWT token in the format: Bearer <token>",
-        }
-    }
-    for path in openapi_schema["paths"].values():  # pyright: ignore[reportAny]
-        for method in path.values():  # pyright: ignore[reportAny]
-            method.setdefault(  # pyright: ignore[reportAny]
-                "security", [{"BearerAuth": []}]
-            )
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-
-app.openapi = custom_openapi
+app.openapi = lambda: custom_openapi(app)
 
 app.add_exception_handler(
     exc_class_or_status_code=RequestValidationError,

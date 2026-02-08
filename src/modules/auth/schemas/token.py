@@ -39,6 +39,17 @@ class ActivateAccountToken(SQLModel):
     )  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
+class PasswordResetToken(SQLModel):
+    token: str = Field(nullable=False)
+    duration: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
+
+    model_config: ConfigDict = ConfigDict(
+        from_attributes=True
+    )  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
 class Temp2TAToken(SQLModel):
     token: str = Field(nullable=False)
     duration: datetime = Field(
@@ -87,6 +98,9 @@ class JWTPayload(TypedDict):
     user_id: int
     token_type: NotRequired[str]
     mfa_pending: NotRequired[bool]
+    rtv: NotRequired[int]
+    sid: NotRequired[str]
+    jti: NotRequired[str]
 
 
 class JWTPayloadWithExp(JWTPayload):

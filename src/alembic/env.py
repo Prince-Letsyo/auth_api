@@ -7,6 +7,7 @@ from alembic import context
 from src.config import config as app_config
 from src.modules.auth.models import (  # pyright: ignore[reportUnusedImport]
     ProfileModel,
+    SessionModel,
     UserModel,
 )
 
