@@ -85,6 +85,7 @@ class JWTPayload(TypedDict):
     username: str
     email: str
     user_id: int
+    token_type: NotRequired[str]
     mfa_pending: NotRequired[bool]
 
 

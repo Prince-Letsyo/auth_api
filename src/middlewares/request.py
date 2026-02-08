@@ -1,4 +1,3 @@
-import json
 import uuid
 from collections.abc import Awaitable
 from typing import Any, Callable, cast
@@ -7,22 +6,28 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse, Response
 from jose.exceptions import ExpiredSignatureError, JWTError
 from sqlalchemy.exc import SQLAlchemyError
-from starlette.concurrency import iterate_in_threadpool
 
 from src.modules.auth.schemas.token import TokenError
 from src.modules.auth.util.token import JWTPayloadWithExp, jwt_auth_token
 from src.core.exceptions import UnauthorizedException
+from src.core.logging import filter_sensitive as log_filter_sensitive
 from src.core.logging import main_logger
 
 
+SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-api-key"}
+
+
+def redact_headers(headers: dict[str, str]) -> dict[str, str]:
+    redacted = headers.copy()
+    for key in list(redacted.keys()):
+        if key.lower() in SENSITIVE_HEADERS:
+            redacted[key] = "[REDACTED]"
+    return redacted
+
+
 def filter_sensitive(data: dict[str, Any] | str) -> dict[str, Any] | str:
-    """Mock filter_sensitive to avoid import error if it was in utils/logging."""
     if isinstance(data, dict):
-        new_data = data.copy()
-        for key in ["password", "token", "secret", "hashed_password"]:
-            if key in new_data:
-                new_data[key] = "********"
-        return new_data
+        return log_filter_sensitive(data.copy())
     return data
 
 
@@ -35,6 +40,8 @@ async def jwt_decoder(
             payload: dict[str, str | bool] = jwt_auth_token.decode_token(
                 token=token.split(sep=" ")[1]
             )
+            if payload.get("token_type") != "access":
+                raise JWTError("Invalid token type")
             request.state.user = payload
 
         except ExpiredSignatureError:
@@ -57,7 +64,8 @@ async def jwt_decoder(
 async def logging_middleware(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
-    request.state.req_id = str(uuid.uuid4())
+    if not hasattr(request.state, "req_id"):
+        request.state.req_id = str(uuid.uuid4())
 
     # Check if request.client exists before accessing .host
     client_host = request.client.host if request.client else "unknown"
@@ -74,7 +82,7 @@ async def logging_middleware(
             main_logger.bind(
                 method=request.method,
                 path=request.url.path,
-                headers=dict[str, str](request.headers),
+                headers=redact_headers(dict[str, str](request.headers)),
             ).info(f"Incoming request: {redacted_body}")
         except Exception:
             main_logger.info("Incoming request: [Non-JSON body]")
@@ -82,34 +90,11 @@ async def logging_middleware(
 
         try:
             response: Response = await call_next(request)
-            response_body: list[bytes] = [
-                chunk
-                async for chunk in response.body_iterator  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType, reportAttributeAccessIssue]
-            ]
-            response.body_iterator = (  # pyright: ignore[reportAttributeAccessIssue]
-                iterate_in_threadpool(iter(response_body))
-            )
-            try:
-                resp_body: dict[str, str | int] | str = (
-                    json.loads(s=b"".join(response_body).decode())
-                    if response.headers.get("content-type") == "application/json"
-                    else b"".join(response_body).decode()
-                )
-                redacted_resp_body: Any = []  # pyright: ignore[reportExplicitAny]
-                # Redact response body
-                if isinstance(resp_body, list):
-                    redacted_resp_body = [
-                        filter_sensitive(data=item) for item in resp_body
-                    ]
-                elif isinstance(resp_body, dict):
-                    redacted_resp_body = filter_sensitive(data=resp_body)
-
-            except Exception:
-                redacted_resp_body = "[Non-JSON response]"
-                pass
-            main_logger.bind(status_code=response.status_code).info(
-                f"Response sent: {redacted_resp_body}"
-            )
+            main_logger.bind(
+                status_code=response.status_code,
+                content_type=response.headers.get("content-type", ""),
+                content_length=response.headers.get("content-length", ""),
+            ).info("Response sent")
             return response
         except SQLAlchemyError as e:
             main_logger.critical(f"Database failed: {e}")
@@ -120,6 +105,7 @@ async def logging_middleware(
 
 
 async def get_current_user(request: Request):
-    if request.state.user is None:  # pyright: ignore[reportAny]
+    user = getattr(request.state, "user", None)
+    if user is None:  # pyright: ignore[reportAny]
         raise UnauthorizedException(message="Unauthorized")
-    return cast(JWTPayloadWithExp, request.state.user)
+    return cast(JWTPayloadWithExp, user)

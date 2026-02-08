@@ -17,7 +17,10 @@ class JWTAuthToken:
     """Creates refresh and access tokens"""
 
     def __create_token(
-        self, data: JWTPayload, expires_delta: timedelta | None = None
+        self,
+        data: JWTPayload,
+        expires_delta: timedelta | None = None,
+        token_type: str | None = None,
     ) -> tuple[str, datetime]:
         """Create JWT token string
 
@@ -36,6 +39,8 @@ class JWTAuthToken:
         else:
             expire: datetime = datetime.now(timezone.utc) + timedelta(minutes=15)
         claims: JWTPayloadWithExp = cast(JWTPayloadWithExp, to_encode)
+        if token_type:
+            claims.update({"token_type": token_type})
         claims.update({"exp": expire})
         encoded_jwt = jwt.encode(
             claims=dict(claims),
@@ -54,7 +59,7 @@ class JWTAuthToken:
         Returns:
             tuple[str, datetime]: token string and expiration datetime
         """
-        return self.__create_token(data)
+        return self.__create_token(data, token_type="activate")
 
     def access_token(self, data: JWTPayload) -> tuple[str, datetime]:
         """Create access JWT access token that should last for about a 30 minutes
@@ -69,6 +74,7 @@ class JWTAuthToken:
         return self.__create_token(
             data,
             expires_delta=timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES)),
+            token_type="access",
         )
 
     def refresh_token(self, data: JWTPayload) -> tuple[str, datetime]:
@@ -84,27 +90,34 @@ class JWTAuthToken:
         return self.__create_token(
             data,
             expires_delta=timedelta(weeks=float(REFRESH_TOKEN_EXPIRE_WEEKS)),
+            token_type="refresh",
         )
 
-    def decode_token(self, token: str) -> dict[str, str | bool]:
-        """Decodes all types of tokens
+    def decode_token(self, token: str) -> dict[str, Any]:
+        """Decodes all types of tokens.
 
         Args:
-            token (str): Accepts access or refresh token
+            token (str): Accepts access or refresh token string.
 
         Raises:
-            e: Exceptions
+            ExpiredSignatureError: If the token has expired.
+            JWTError: If the token is invalid or malformed.
 
         Returns:
-            dict[str, str]: Payload
+            dict[str, Any]: The decoded JWT payload.
         """
         try:
             payload: dict[str, Any] = jwt.decode(  # pyright: ignore[reportExplicitAny]
                 token, SECRET_KEY, algorithms=[ALGORITHM]
             )
             return payload
-        except Exception as e:
+        except (ExpiredSignatureError, JWTError) as e:
+            # We re-raise these specifically so callers can handle them if needed,
+            # but they inherit from JWTError or are checked explicitly in controllers.
             raise e
+        except Exception as e:
+            # Wrap unexpected errors in a general JWTError to maintain consistency
+            raise JWTError("An unexpected error occurred during token decoding") from e
 
     def create_temp_2fa_token(self, data: JWTPayload) -> tuple[str, datetime]:
         """Create temporary 2FA JWT token that should last for about 5 minutes
@@ -119,6 +132,7 @@ class JWTAuthToken:
             expires_delta=timedelta(
                 minutes=float(config.env.token.temp_2fa_token_expire_minutes)
             ),
+            token_type="temp_2fa",
         )
 
 

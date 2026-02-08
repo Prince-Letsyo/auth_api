@@ -31,6 +31,8 @@ def downgrade_database(revision: str = "-1") -> None:
     command.downgrade(cfg, revision)
 
 
-def is_valid_url(url: str) -> bool:
+def is_valid_url(url: str | None) -> bool:
     """Simple check if a string is a valid URL."""
+    if url is None:
+        return False
     return url.startswith(("http://", "https://"))

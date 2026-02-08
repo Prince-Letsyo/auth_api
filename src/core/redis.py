@@ -12,7 +12,8 @@ from src.config import config
 class SafeJsonCoder(JsonCoder):
     @classmethod
     def decode(  # pyright: ignore[reportAny, reportImplicitOverride]
-        cls, value  # pyright: ignore[reportMissingParameterType]
+        cls,
+        value,  # pyright: ignore[reportMissingParameterType]
     ):
         if isinstance(value, bytes):  # pyright: ignore[reportUnnecessaryIsInstance]
             value = value.decode("utf-8")  # decode bytes to str
@@ -35,5 +36,7 @@ async def init_redis() -> None:
             expire=cast(int, config.redis.cache_expire),
         )
     except ConnectionError as e:
-        print(f"❌ Redis connection failed: {e}")
+        from src.core.logging import main_logger
+
+        main_logger.error(f"❌ Redis connection failed: {e}")
         raise RuntimeError("Failed to initialize Redis cache") from e

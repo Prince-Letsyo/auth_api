@@ -1,128 +1,113 @@
 # Auth API
 
+[![Python](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg)](https://fastapi.tiangolo.com/)
+[![SQLModel](https://img.shields.io/badge/SQLModel-0.0.14+-009688.svg)](https://sqlmodel.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A robust, asynchronous Authentication API built with **FastAPI**, **SQLModel**, and **PostgreSQL**. This project provides a complete user management system with secure authentication, Two-Factor Authentication (2FA), and email background tasks.
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    User([User]) <--> API[FastAPI Server]
+    API <--> DB[(PostgreSQL)]
+    API <--> Redis[(Redis)]
+    Redis <--> Worker[Celery Worker]
+    Worker --> Email[Email Service]
+```
 
 ## 🚀 Features
 
-*   **User Registration & Login**: Secure sign-up and sign-in processes using JWT (JSON Web Tokens).
-*   **Two-Factor Authentication (2FA)**: Support for Time-based One-Time Passwords (TOTP) for enhanced security.
-*   **Email Verification**: Account activation via email links to ensure valid user registration.
-*   **Password Management**: Secure password hashing with Argon2, plus password reset flows.
-*   **Async Database**: High-performance database interactions using SQLModel and AsyncPG.
-*   **Background Tasks**: Asynchronous email sending using Celery and Redis.
-*   **Modern Tooling**: Built with `uv` for dependency management and `alembic` for migrations.
+*   **Secure Authentication**: JWT-based sign-up, sign-in, and token refresh.
+*   **Two-Factor Authentication (2FA)**: Support for TOTP using apps like Google Authenticator.
+*   **Account Activation**: Email-based verification for new accounts.
+*   **Password Management**: Argon2 hashing and secure reset flows.
+*   **Async Performance**: Fully asynchronous database and API operations.
+*   **Background Tasks**: Celery-powered email delivery.
+*   **Modern Tooling**: Managed with `uv` and `alembic` for migrations.
 
 ## 🛠️ Tech Stack
 
-*   **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.13+)
-*   **Database**: PostgreSQL, [SQLModel](https://sqlmodel.tiangolo.com/) (SQLAlchemy + Pydantic)
-*   **Authentication**: JWT, `python-jose`, `passlib[argon2]`, `pyotp`
-*   **Task Queue**: Celery, Redis
-*   **Testing**: Pytest
-*   **Package Manager**: [uv](https://github.com/astral-sh/uv)
+*   **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
+*   **Database**: PostgreSQL with [SQLModel](https://sqlmodel.tiangolo.com/)
+*   **Auth**: JWT (python-jose), Argon2 (passlib), TOTP (pyotp)
+*   **Task Queue**: Celery & Redis
+*   **Tooling**: [uv](https://github.com/astral-sh/uv), Alembic, Pytest
 
 ## 📋 Prerequisites
 
-Before running the project, ensure you have the following installed:
+- Python 3.13+
+- PostgreSQL
+- Redis
+- [uv](https://github.com/astral-sh/uv) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
-*   **Python** 3.13+
-*   **PostgreSQL** (Database)
-*   **Redis** (Message Broker for Celery)
-*   **Make** (Optional, for using the Makefile)
+## ⚙️ Setup & Installation
 
-## ⚙️ Installation & Setup
-
-1.  **Clone the repository**:
+1.  **Clone the Repository**
     ```bash
     git clone <repository-url>
     cd auth_api
     ```
 
-2.  **Set up the Virtual Environment**:
+2.  **Initialize Environment**
     ```bash
     make venv
     ```
 
-3.  **Install Dependencies**:
-    ```bash
-    make install
+3.  **Configure Environment Variables**
+    Copy `.env.example` to `.env` (if applicable) or create a `.env` file with:
+    ```env
+    SECRET_KEY=your-secure-secret
+    DB_URL=postgresql+asyncpg://user:password@localhost/auth_api_db
+    REDIS_URL=redis://localhost
+    CELERY_BROKER_URL=redis://localhost:6379/0
     ```
 
-4.  **Configure Environment**:
-    The application uses a configuration file (e.g., `config.yaml` or `config.dev.yaml`).
-    
-    Ensure you have your PostgreSQL and Redis services running. Update your configuration file with the correct credentials:
-    ```yaml
-    database:
-      url: postgresql+asyncpg://user:password@localhost/auth_api_db
-    redis:
-      url: redis://localhost
-    ```
-
-5.  **Run Database Migrations**:
+4.  **Run Migrations**
     ```bash
     alembic upgrade head
     ```
 
-## 🏃‍♂️ Usage
+## 🏃‍♂️ Development
 
-### Start the API Server
-Run the development server with auto-reload:
-```bash
-make serve
+| Command | Description |
+|---------|-------------|
+| `make serve` | Start the API server (auto-reload) |
+| `make celery` | Start the Celery worker |
+| `make test` | Run the test suite |
+| `make lint` | Run quality checks (Flake8, Mypy) |
+| `make format` | Format code (Black, Isort) |
+
+## 📁 Project Structure
+
+```text
+src/
+├── core/           # Security, dependencies, celery setup
+├── config/         # App configuration management
+├── modules/        # Domain-driven modules
+│   └── auth/       # Authentication domain (models, routers, services)
+├── tasks/          # Celery background tasks
+├── templates/      # Jinja2 email templates
+└── shared/         # Common utilities and base classes
 ```
-The API will be available at `http://127.0.0.1:8000`.
-You can access the interactive API docs at `http://127.0.0.1:8000/docs`.
 
-### Start Celery Worker
-For handling background tasks (like sending emails):
-```bash
-make celery
-```
+## 🔌 API Overview
 
-## 🔌 API Endpoints
+### Auth Endpoints
+- `POST /api/auth/sign-up`: Register new user
+- `POST /api/auth/sign-in`: Login (non-MFA)
+- `POST /api/auth/sign-in-mfa`: Login with 2FA
+- `POST /api/auth/enable-2fa`: Setup TOTP
+- `POST /api/auth/activate-account`: Email verification
 
-### Authentication
-*   **POST** `/api/auth/sign-up`: Register a new user account.
-*   **POST** `/api/auth/sign-in`: Log in to receive an access token.
-*   **POST** `/api/auth/sign-in-mfa`: Log in using 2FA credentials.
-*   **POST** `/api/auth/access`: Refresh or retrieve access tokens.
-
-### Account Management
-*   **GET** `/api/auth/activate-account`: Activate a user account via token.
-*   **POST** `/api/auth/send-activation-email`: Resend the account activation email.
-*   **POST** `/api/auth/request-password-reset`: Request a password reset link.
-*   **POST** `/api/auth/reset-password`: Reset the password using a valid token.
-
-### Security (Authenticated)
-*   **POST** `/api/auth/enable-2fa`: Enable Two-Factor Authentication for the current user.
-*   **POST** `/api/auth/disable-2fa`: Disable Two-Factor Authentication.
+Access the interactive documentation at `/docs` (Swagger) or `/redoc`.
 
 ## 🧪 Testing
 
-Run the test suite using `pytest`:
+Tests are located in the `tests/` directory and can be run using:
 ```bash
 make test
 ```
 
-## 🧹 Code Quality
-
-Run linting and formatting checks:
-```bash
-make format   # Formats code with Black and Isort
-make lint     # Checks code with Flake8 and Mypy
-```
-
-## 📁 Project Structure
-
-```
-src/
-├── auth/           # Authentication logic, routers, schemas
-├── config/         # Configuration management
-├── core/           # Core application setup & dependencies
-├── entities/       # Database models (SQLModel)
-├── services/       # Business logic (Service layer)
-├── tasks/          # Celery tasks (e.g., email sending)
-├── templates/      # Email templates (Jinja2)
-└── ...
-```

@@ -99,10 +99,17 @@ app.add_exception_handler(
 )
 
 if config.enable_cors:
+    frontend_url = config.env.frontend_url
+    if frontend_url:
+        allow_origins = [str(frontend_url)]
+        allow_credentials = True
+    else:
+        allow_origins = ["*"]
+        allow_credentials = False
     app.add_middleware(
         middleware_class=CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
+        allow_origins=allow_origins,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )

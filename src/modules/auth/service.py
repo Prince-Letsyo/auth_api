@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 import qrcode
 from jose import ExpiredSignatureError, JWTError
@@ -45,7 +45,15 @@ class AuthController:
     async def activate_account(self, token: str):
         try:
             payload: dict[str, str | bool] = jwt_auth_token.decode_token(token=token)
-            username: str = cast(str, payload.get("username"))
+            if payload.get("token_type") != "activate":
+                raise UnauthorizedException(message="Invalid token type")
+
+            username = payload.get("username")
+            if not username or not isinstance(username, str):
+                raise UnauthorizedException(
+                    message="Invalid token payload: missing username"
+                )
+
             user = await self.repository.activate_user_account(username=username)
             return user
         except ExpiredSignatureError:
@@ -107,13 +115,25 @@ class AuthController:
     async def log_in_2fa(self, token: str, totp_token: str):
         try:
             payload: dict[str, str | bool] = jwt_auth_token.decode_token(token=token)
+            if payload.get("token_type") != "temp_2fa":
+                raise UnauthorizedException(message="Invalid token type")
             if not payload.get("mfa_pending", False):
                 raise UnauthorizedException(message="2FA is not pending for this token")
-            username: str = cast(str, payload.get("username"))
+            username = payload.get("username")
+            if not username or not isinstance(username, str):
+                raise UnauthorizedException(
+                    message="Invalid token payload: missing username"
+                )
+
             user = await self.repository.get_user_by_username(username=username)
 
             if not user.is_2fa_enabled:
                 raise UnauthorizedException(message="2FA is not enabled for this user")
+
+            if user.totp_secret is None:
+                raise AppException(
+                    message="2FA secret is missing. Please re-enable 2FA."
+                )
 
             if not verify_totp(
                 token=totp_token, totp_secret=cast(str, user.totp_secret)
@@ -134,11 +154,23 @@ class AuthController:
                 token=token_string
             )
             if payload:
+                if payload.get("token_type") != "refresh":
+                    raise UnauthorizedException(message="Invalid token type")
+
+                username = payload.get("username")
+                email = payload.get("email")
+                user_id = payload.get("user_id")
+
+                if not all([username, email, user_id]):
+                    raise UnauthorizedException(
+                        message="Invalid token payload: missing required fields"
+                    )
+
                 access_token, access_timestamp = jwt_auth_token.access_token(
                     data={
-                        "username": cast(str, payload.get("username", "")),
-                        "email": cast(str, payload.get("email", "")),
-                        "user_id": int(payload.get("user_id", 0)),
+                        "username": cast(str, username),
+                        "email": cast(str, email),
+                        "user_id": int(user_id),
                     },
                 )
                 return AccessToken.model_validate(
@@ -153,17 +185,27 @@ class AuthController:
 
     async def password_reset(self, token: str, rest_password: PasswordResetRequest):
         try:
-            payload: dict[str, str | bool] = jwt_auth_token.decode_token(token=token)
+            payload: dict[str, Any] = jwt_auth_token.decode_token(token=token)
+            if payload.get("token_type") != "activate":
+                raise UnauthorizedException(message="Invalid token type")
+
+            email = payload.get("email")
+            username = payload.get("username")
+            if not email or not isinstance(email, str) or not username:
+                raise UnauthorizedException(
+                    message="Invalid token payload: missing user info"
+                )
+
             validation = password_validator.validate_password(
                 password=rest_password.password_one.get_secret_value(),
-                username=cast(str, payload.get("username", "")),
-                email=cast(str, payload.get("email", "")),
+                username=cast(str, username),
+                email=cast(str, email),
             )
             if not validation["is_valid"]:
                 raise AppException(message=cast(str, validation["errors"][0]))
 
             user = await self.repository.update_user_password(
-                email=cast(str, payload.get("email", "")),
+                email=cast(str, email),
                 new_password=rest_password.password_one.get_secret_value(),
             )
             return user

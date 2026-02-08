@@ -39,7 +39,7 @@ class ProfileModel(SQLModel, table=True):
     )
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    bio: str = Field(default=False, nullable=True)
-    avatar_url: str = Field(default=False, nullable=True)
+    bio: str | None = Field(default=None, nullable=True)
+    avatar_url: str | None = Field(default=None, nullable=True)
 
     user: UserModel | None = cast(UserModel, Relationship(back_populates="profile"))

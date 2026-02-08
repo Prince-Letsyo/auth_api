@@ -19,7 +19,11 @@ def log_task_success(result: dict[str, str]):
 @shared_task(bind=True)  # pyright: ignore[reportAny]
 def log_task_failure(
     self,
-    task_id,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType, reportUnusedParameter]
+    task_id=None,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
+    exc=None,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
+    traceback=None,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
+    einfo=None,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
+    **_kwargs,  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
 ):
     """
     Logs the failure of any task that links to it using link_error.
@@ -27,6 +31,8 @@ def log_task_failure(
     """
     main_logger.error("❌ Celery Task Failure Handler Triggered")
     main_logger.error(f"   Task ID: {task_id}")
+    if exc:
+        main_logger.error(f"   Exception: {exc}")
 
 
 @celery_app.task(  # pyright: ignore[reportUnknownMemberType, reportUntypedFunctionDecorator]

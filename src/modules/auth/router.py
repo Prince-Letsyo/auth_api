@@ -18,6 +18,7 @@ from src.core.dependencies import get_auth_controller
 from src.core.router.base import CustomRouter
 from src.middlewares.request import get_current_user
 from src.tasks.email import (  # pyright: ignore[reportUnknownVariableType]
+    log_task_failure,
     log_task_success,
     send_activate_email,
     send_password_reset_email,
@@ -27,7 +28,12 @@ from src.tasks.email import (  # pyright: ignore[reportUnknownVariableType]
 
 def fire_and_forget(task, *args, **kwargs):
     """Simple wrapper for fire and forget tasks."""
-    return task.apply_async(args=args, kwargs=kwargs)
+    return task.apply_async(
+        args=args,
+        kwargs=kwargs,
+        link=log_task_success.s(),
+        link_error=log_task_failure.s(),
+    )
 
 
 from src.shared.utils.alembic_utils import is_valid_url
@@ -53,8 +59,7 @@ async def sign_up(
         send_activate_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
             activate_user_response=activate_user_response.model_dump(),
             activation_link=activation_link,
-        ),
-        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
+        )
     )
     return {
         "message": "User created successfully. Please check your email to activate your account."
@@ -104,8 +109,7 @@ async def activate_account(
     fire_and_forget(
         send_welcome_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
             to_email={"name": user.username, "email": user.email},
-        ),
-        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
+        )
     )
     return {"message": "Account activated successfully. You can now log in."}
 
@@ -132,8 +136,7 @@ async def send_activation_email(
         send_activate_email.s(  # pyright: ignore[reportAny, reportFunctionMemberAccess]
             activate_user_response=activate_user_response.model_dump(),
             activation_link=activation_link,
-        ),
-        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
+        )
     )
     return {"message": "Activation email sent successfully. Please check your email."}
 
@@ -162,8 +165,7 @@ async def request_password_reset(
                 "email": activate_user_response.email,
             },
             reset_link=reset_link,
-        ),
-        log_task_success.s(),  # pyright: ignore[reportAny, reportFunctionMemberAccess, ]
+        )
     )
     return {"message": "A password reset link has been sent to your email."}
 
